@@ -5,6 +5,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 export default defineConfig({
     plugins: [svelte()],
     publicDir: 'static',
+    assetsInclude: ['**/*.zip'], // Allows us to serve static zip packages
 })
 
 
