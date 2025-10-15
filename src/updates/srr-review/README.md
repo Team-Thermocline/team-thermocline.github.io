@@ -1,3 +1,7 @@
+---
+date: 2025-09-19
+---
+
 # SRR Review
 
 SRR Published and presented! Everyone did a great job. Go team!

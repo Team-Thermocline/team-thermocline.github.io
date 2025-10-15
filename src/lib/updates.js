@@ -2,32 +2,65 @@
 // Needs a README.md, preview.(png|jpg|jpeg|webp|gif), bundle.zip
 
 
-const readmes = import.meta.glob('/src/updates/**/README.md', { as: 'raw', eager: true })
-const previews = import.meta.glob('/src/updates/**/preview.{png,jpg,jpeg,webp,gif}', { as: 'url', eager: true })
-const bundles = import.meta.glob('/src/updates/**/bundle.zip', { as: 'url', eager: true })
+const readmes = import.meta.glob('/src/updates/**/README.md', { query: '?raw', import: 'default', eager: true })
+const previews = import.meta.glob('/src/updates/**/preview.{png,jpg,jpeg,webp,gif}', { query: '?url', import: 'default', eager: true })
+const bundles = import.meta.glob('/src/updates/**/bundle.zip', { query: '?url', import: 'default', eager: true })
 
 function extractTitleAndBlurb(markdown) {
     if (!markdown || typeof markdown !== 'string') {
-        return { title: 'Untitled', blurb: '' }
+        return { title: 'Untitled', blurb: '', date: new Date() }
     }
+
     const lines = markdown.split(/\r?\n/)
     let title = 'Untitled'
-    for (const line of lines) {
-        const m = line.match(/^#\s+(.*)/)
+    let blurb = ''
+    let date = new Date()
+
+    // Check for YAML frontmatter
+    if (lines[0] === '---') {
+        let frontmatterEnd = -1
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i] === '---') {
+                frontmatterEnd = i
+                break
+            }
+        }
+
+        if (frontmatterEnd > 0) {
+            // Parse frontmatter
+            for (let i = 1; i < frontmatterEnd; i++) {
+                const match = lines[i].match(/^date:\s*(.+)$/)
+                if (match) {
+                    const dateStr = match[1].trim()
+                    const parsed = new Date(dateStr)
+                    if (!isNaN(parsed.getTime())) {
+                        date = parsed
+                    }
+                }
+            }
+        }
+    }
+
+    // Find title (first H1 after frontmatter)
+    const startLine = lines[0] === '---' ? lines.findIndex((line, i) => i > 0 && line === '---') + 1 : 0
+    for (let i = startLine; i < lines.length; i++) {
+        const m = lines[i].match(/^#\s+(.*)/)
         if (m) {
             title = m[1].trim()
             break
         }
     }
-    // blurb: first non-empty line that isn't a heading
-    let blurb = ''
-    for (const line of lines) {
-        if (!line.trim()) continue
+
+    // blurb: first non-empty line that isn't a heading (after frontmatter)
+    for (let i = startLine; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
         if (/^#/.test(line)) continue
-        blurb = line.trim()
+        blurb = line
         break
     }
-    return { title, blurb }
+
+    return { title, blurb, date }
 }
 
 export function loadUpdates() {
@@ -36,10 +69,10 @@ export function loadUpdates() {
     for (const path in readmes) {
         const md = readmes[path]
         const folder = path.replace(/\/README\.md$/, '')
-        const { title, blurb } = extractTitleAndBlurb(md)
+        const { title, blurb, date } = extractTitleAndBlurb(md)
 
-        // find preview if present
-        let previewUrl = null
+        // find preview if present, otherwise use default
+        let previewUrl = '/logos/Thermocline%20PFP.png' // default
         for (const p in previews) {
             if (p.startsWith(folder + '/')) {
                 previewUrl = previews[p]
@@ -57,11 +90,11 @@ export function loadUpdates() {
         }
 
         const slug = folder.split('/').pop()
-        updates.push({ slug, title, blurb, previewUrl, bundleUrl, markdown: md })
+        updates.push({ slug, title, blurb, previewUrl, bundleUrl, markdown: md, date })
     }
 
-    // Sort newest first by folder name if using yyyymmdd prefix; otherwise alphabetical reverse
-    updates.sort((a, b) => (a.slug < b.slug ? 1 : -1))
+    // Sort by date (newest first)
+    updates.sort((a, b) => b.date.getTime() - a.date.getTime())
 
     return updates
 }
