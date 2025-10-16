@@ -1,0 +1,14 @@
+---
+config:
+    flowchart:
+        defaultRenderer: elk
+---
+
+flowchart TD
+    PWR[Power On] --> POST --> STBY[Standby/Mode Select] 
+
+    STBY --> FOLLOW["Follow Curve"]
+…
+    STBY --> POWER_OFF
+    ERROR --> POWER_OFF
+    POWER_OFF("Power Off")

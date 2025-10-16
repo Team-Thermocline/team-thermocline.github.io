@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "python tools/build_bundles.py && vite build",
+    "build:bundles": "python tools/build_bundles.py",
     "preview": "vite preview --port 4173"
   },
   "dependencies": {

@@ -5,3 +5,6 @@ dist/
 
 # Art/Graphics
 *.*~
+
+# Bundles
+bundle.zip
