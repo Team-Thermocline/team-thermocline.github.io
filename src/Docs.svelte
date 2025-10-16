@@ -36,14 +36,15 @@
                     <ul class="docs-toc">
                         {#each docs as doc}
                             <li>
-                                <a
+                                <button
                                     class="docs-nav-link"
                                     class:active={selectedDoc?.slug ===
                                         doc.slug}
                                     on:click={() => selectDoc(doc)}
+                                    type="button"
                                 >
                                     {doc.title}
-                                </a>
+                                </button>
                             </li>
                         {/each}
                     </ul>

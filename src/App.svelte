@@ -101,12 +101,10 @@
       {:else}
         <div class="updates-grid">
           {#each updates as u}
-            <article
+            <button
               class="update-card"
               on:click={() => openUpdate(u)}
-              on:keydown={(e) => e.key === "Enter" && openUpdate(u)}
-              role="button"
-              tabindex="0"
+              type="button"
             >
               {#if u.previewUrl}
                 <img class="update-thumb" src={u.previewUrl} alt={u.title} />
@@ -121,7 +119,7 @@
                   >
                 {/if}
               </div>
-            </article>
+            </button>
           {/each}
         </div>
       {/if}
@@ -141,13 +139,7 @@
     role="button"
     tabindex="0"
   >
-    <div
-      class="modal"
-      on:click|stopPropagation
-      on:keydown|stopPropagation
-      role="dialog"
-      aria-modal="true"
-    >
+    <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 class="modal-title">{active.title}</h3>
         <button class="modal-close" on:click={closeUpdate}>✕</button>
