@@ -81,7 +81,8 @@
       <h3>About the project</h3>
       <ul class="link-list">
         <li>
-          <a href="https://github.com/Team-Thermocline/thermocline.github.io"
+          <a
+            href="https://github.com/Team-Thermocline/team-thermocline.github.io"
             >Github for this site</a
           >
         </li>
