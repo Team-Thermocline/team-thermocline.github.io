@@ -23,3 +23,10 @@ Run the dev server
 ```shell
 npm run dev
 ```
+
+# Tools
+
+Make a new update
+```shell
+npm run new-update
+```

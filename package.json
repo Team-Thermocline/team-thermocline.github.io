@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "python tools/build_bundles.py && vite build",
     "build:bundles": "python tools/build_bundles.py",
+    "new-update": "python tools/new_update.py",
     "preview": "vite preview --port 4173"
   },
   "dependencies": {
