@@ -5,13 +5,21 @@
   import Docs from "./Docs.svelte";
 
   const navItems = [
-    { label: "Home", href: "#", page: "home" },
-    { label: "Docs", href: "#", page: "docs" },
-    { label: "Sender", href: "#", page: "sender" },
+    { label: "Home", href: "#home", page: "home" },
+    { label: "Docs", href: "#docs", page: "docs" },
+    { label: "Sender", href: "#sender", page: "sender" },
   ];
   const updates = loadUpdates();
   let active = null;
   let currentPage = "home";
+
+  // Initialize from hash on page load
+  if (typeof window !== "undefined") {
+    const hash = window.location.hash.slice(1);
+    if (hash && ["home", "docs", "sender"].includes(hash)) {
+      currentPage = hash;
+    }
+  }
 
   function openUpdate(u) {
     active = u;
@@ -22,7 +30,23 @@
   function navigate(page) {
     if (page) {
       currentPage = page;
+      // Update URL hash
+      if (typeof window !== "undefined") {
+        window.location.hash = page;
+      }
     }
+  }
+
+  // Listen for hash changes (back/forward buttons)
+  if (typeof window !== "undefined") {
+    window.addEventListener("hashchange", () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && ["home", "docs", "sender"].includes(hash)) {
+        currentPage = hash;
+      } else if (!hash) {
+        currentPage = "home";
+      }
+    });
   }
 </script>
 
