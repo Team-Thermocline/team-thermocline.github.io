@@ -1,7 +1,7 @@
 <script>
   import { loadUpdates } from "./lib/updates.js";
   import { marked } from "marked";
-  import Sender from "./Sender.svelte";
+  import Sender from "./sender/Sender.svelte";
   import Docs from "./Docs.svelte";
 
   const navItems = [
