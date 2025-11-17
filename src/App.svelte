@@ -18,18 +18,33 @@
     const hash = window.location.hash.slice(1);
     if (hash && ["home", "docs", "sender"].includes(hash)) {
       currentPage = hash;
+    } else if (hash && hash.startsWith("update:")) {
+      const slug = hash.slice(7); // Remove "update:" prefix
+      const update = updates.find((u) => u.slug === slug);
+      if (update) {
+        currentPage = "home";
+        active = update;
+      }
     }
   }
 
   function openUpdate(u) {
     active = u;
+    currentPage = "home";
+    if (typeof window !== "undefined") {
+      window.location.hash = `update:${u.slug}`;
+    }
   }
   function closeUpdate() {
     active = null;
+    if (typeof window !== "undefined") {
+      window.location.hash = "home";
+    }
   }
   function navigate(page) {
     if (page) {
       currentPage = page;
+      active = null; // Close any open update when navigating
       // Update URL hash
       if (typeof window !== "undefined") {
         window.location.hash = page;
@@ -43,8 +58,17 @@
       const hash = window.location.hash.slice(1);
       if (hash && ["home", "docs", "sender"].includes(hash)) {
         currentPage = hash;
+        active = null;
+      } else if (hash && hash.startsWith("update:")) {
+        const slug = hash.slice(7);
+        const update = updates.find((u) => u.slug === slug);
+        if (update) {
+          currentPage = "home";
+          active = update;
+        }
       } else if (!hash) {
         currentPage = "home";
+        active = null;
       }
     });
   }
