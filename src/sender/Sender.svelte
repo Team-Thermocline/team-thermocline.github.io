@@ -1,24 +1,20 @@
 <script>
   import "./sender.css";
-  import { SCHEMA_VERSION, HOST_ID, parseJsonLine } from "./logic.js";
+  import { parseJsonLine } from "./logic.js";
 
   let port = null;
   let reader = null;
   let writer = null;
   let connected = false;
   let logs = [];
-  let command = "";
   let baudRate = 115200;
   let autoConnect = true;
-  let showDataLogs = false;
 
-  let handshakeState = "idle";
-  let handshakeMessage = "Not connected";
-  let handshakeComplete = false;
-  let schemaError = false;
-  let lastDataFrame = null;
-  let lastDataTimestamp = null;
-  let helloAckSent = false;
+  let status = null;
+  let statusInterval = null;
+  let pingInterval = null;
+  let showConsole = true;
+  let consoleOutput = null;
 
   $: if (autoConnect && !connected && navigator.serial) {
     connect();
@@ -27,11 +23,7 @@
   async function connect() {
     try {
       if (!navigator.serial) {
-        addLog(
-          "Web Serial API not supported. Use Chrome/Edge/Firefox 89+",
-          "error",
-        );
-        addLog("Firefox: Check about:config for dom.serial.enabled", "error");
+        addLog("Web Serial API not supported. Use Chrome/Edge.", "error");
         return;
       }
 
@@ -43,17 +35,18 @@
       writer = port.writable.getWriter();
       connected = true;
 
-      addLog("Connected to serial port", "success");
-      setStatus("waiting", "Waiting for hello...");
-      resetHandshake({ resetAck: true });
-
+      addLog("Connected", "success");
       readLoop();
+      startStatusPolling();
+      // Send initial status request immediately
+      sendCommand("get_status");
     } catch (err) {
       addLog(`Connection failed: ${err.message}`, "error");
     }
   }
 
   async function disconnect() {
+    stopStatusPolling();
     try {
       if (reader) {
         reader.releaseLock();
@@ -68,9 +61,9 @@
         port = null;
       }
       connected = false;
+      status = null;
+      showConsole = true; // Show console again on disconnect
       addLog("Disconnected", "info");
-      setStatus("idle", "Not connected");
-      resetHandshake({ resetAck: true });
     } catch (err) {
       addLog(`Disconnect error: ${err.message}`, "error");
     }
@@ -106,21 +99,6 @@
     }
   }
 
-  async function sendCommand() {
-    if (!connected || !writer) {
-      addLog("Not connected", "error");
-      return;
-    }
-
-    try {
-      await writer.write(new TextEncoder().encode(command + "\n"));
-      addLog(`TX -> ${command}`, "tx");
-      command = "";
-    } catch (err) {
-      addLog(`Send error: ${err.message}`, "error");
-    }
-  }
-
   function addLog(message, type = "info") {
     logs = [
       ...logs,
@@ -133,60 +111,68 @@
     if (logs.length > 100) {
       logs = logs.slice(-100);
     }
+    // Auto-scroll to bottom
+    setTimeout(() => {
+      if (consoleOutput) {
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+    }, 0);
+  }
+
+  // Auto-scroll when logs change
+  $: if (logs.length > 0 && consoleOutput) {
+    setTimeout(() => {
+      consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }, 0);
   }
 
   function clearLogs() {
     logs = [];
   }
 
-  function handleKeydown(event) {
-    if (event.key === "Enter") {
-      sendCommand();
-    }
-  }
-
-  function resetHandshake(options = {}) {
-    handshakeComplete = false;
-    schemaError = false;
-    lastDataFrame = null;
-    lastDataTimestamp = null;
-    if (options.resetAck) {
-      helloAckSent = false;
-    }
-  }
-
-  function setStatus(state, message) {
-    handshakeState = state;
-    handshakeMessage = message;
-  }
-
-  async function sendHelloAck() {
-    // Can send a hello acknowledge
+  async function sendCommand(cmdType, cmdData = {}) {
     if (!connected || !writer) {
-      addLog("Cannot send hello_ack (not connected)", "error");
-      return;
+      return false;
     }
 
-    if (helloAckSent) {
-      addLog("hello_ack already sent; ignoring repeat hello", "info");
-      return;
-    }
-
-    helloAckSent = true;
     const payload = {
-      type: "hello_ack",
-      schema: SCHEMA_VERSION,
-      host: HOST_ID,
-      ts: Date.now(),
+      type: cmdType,
+      data: cmdData,
     };
 
     try {
       const text = JSON.stringify(payload);
       await writer.write(new TextEncoder().encode(text + "\n"));
       addLog(`TX -> ${text}`, "tx");
+      return true;
     } catch (err) {
-      helloAckSent = false;
-      addLog(`Send hello_ack failed: ${err.message}`, "error");
+      addLog(`Send error: ${err.message}`, "error");
+      return false;
+    }
+  }
+
+  function startStatusPolling() {
+    stopStatusPolling();
+    // Poll status every 10 seconds
+    statusInterval = setInterval(async () => {
+      await sendCommand("get_status");
+    }, 10000);
+    // Also send initial ping
+    sendCommand("ping");
+    // Then ping every 10 seconds
+    pingInterval = setInterval(async () => {
+      await sendCommand("ping");
+    }, 10000);
+  }
+
+  function stopStatusPolling() {
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
+    }
+    if (pingInterval) {
+      clearInterval(pingInterval);
+      pingInterval = null;
     }
   }
 
@@ -201,89 +187,70 @@
 
     const parsed = result.value;
     const msgType = parsed?.type || "unknown";
-    const logThis = msgType !== "data" || showDataLogs;
 
-    if (logThis) {
-      addLog(`RX <- ${line}`, "rx");
-    }
+    addLog(`RX <- ${line}`, "rx");
 
-    // Handle hello message
-    if (msgType === "hello") {
-      handleHello(parsed);
-      return;
-    }
-
-    // Handle error message
-    if (msgType === "error") {
-      schemaError = true;
-      setStatus("error", parsed.message || "Firmware reported error");
-      addLog(`ERROR: ${handshakeMessage}`, "error");
-      helloAckSent = false;
-      handshakeComplete = false;
-      return;
-    }
-
-    if (msgType === "data") {
-      const seq = parsed.seq ?? "—";
-      const temp = parsed.temp ?? "—";
-      if (showDataLogs) {
-        addLog(`DATA seq=${seq} temp=${temp}`, "data");
-      }
-      lastDataFrame = parsed;
-      lastDataTimestamp = new Date();
-      handshakeComplete = true;
-      setStatus("ok", `Receiving data (seq ${seq})`);
-      return;
-    }
-
-    // Handle hello_ack message
-    if (msgType === "hello_ack") {
-      handshakeComplete = true;
-      setStatus("ok", "Firmware acknowledged handshake");
-      addLog("Device echoed hello_ack", "info");
+    // Handle reply messages
+    if (msgType === "reply") {
+      handleReply(parsed);
       return;
     }
 
     addLog(`Unhandled message type '${msgType}'`, "info");
   }
 
-  function handleHello(parsed) {
-    const fw = parsed.fw ?? "unknown";
-    const schema = parsed.schema ?? "unknown";
-    addLog(`HELLO from fw ${fw} (schema ${schema})`, "hello");
+  function handleReply(parsed) {
+    const replyData = parsed.data || {};
+    const success = replyData.success ?? false;
 
-    if (handshakeComplete) {
-      addLog("Device initiated new handshake, resetting state", "info");
-      resetHandshake({ resetAck: true });
-    } else {
-      resetHandshake();
-    }
-    setStatus("waiting", "hello received, replying...");
-
-    if (schema !== SCHEMA_VERSION) {
-      setStatus(
-        "warning",
-        `Schema mismatch: device ${schema}, host ${SCHEMA_VERSION}`,
-      );
-    }
-
-    if (!helloAckSent) {
-      sendHelloAck();
-      if (schema === SCHEMA_VERSION) {
-        setStatus("waiting", "hello_ack sent (waiting for data...)");
+    if (success && replyData.status !== undefined) {
+      // This is a status reply
+      const hadStatus = status !== null;
+      status = {
+        status: replyData.status || "unknown",
+        uptime_ms: replyData.uptime_ms ?? 0,
+        revision: replyData.revision || "unknown",
+        build_date: replyData.build_date || "0",
+      };
+      addLog("Status received", "success");
+      // Hide console once we first receive status
+      if (!hadStatus) {
+        showConsole = false;
       }
+    } else if (success && replyData.message === "pong") {
+      // This is a ping reply
+      addLog("Pong received", "info");
+    } else {
+      addLog(`Reply: ${JSON.stringify(replyData)}`, "info");
     }
+  }
+
+  function formatUptime(ms) {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}d ${hours % 24}h`;
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
+  }
+
+  function formatBuildDate(timestamp) {
+    if (!timestamp || timestamp === "0") return "Unknown";
+    const date = new Date(parseInt(timestamp) * 1000);
+    return date.toLocaleString();
   }
 </script>
 
 <main class="container">
   <section class="content-block">
-    <h2>Serial Console</h2>
+    <h2>Controller Console</h2>
     <p>Connect to your thermal chamber controller via serial port.</p>
 
     <div class="warning">
       <strong>⚠️ Browser Compatibility:</strong> This tool works best in Chrome/Edge.
-      Firefox support varies by version.
     </div>
 
     <div class="serial-controls">
@@ -306,83 +273,51 @@
       </div>
 
       <div class="control-row">
-        <label>
-          <input type="checkbox" bind:checked={showDataLogs} />
-          Show data frames in log
-        </label>
-      </div>
-
-      <div class="control-row">
         {#if !connected}
           <button class="nav-btn" on:click={connect}>Connect</button>
         {:else}
           <button class="nav-btn" on:click={disconnect}>Disconnect</button>
         {/if}
         <button class="nav-btn" on:click={clearLogs}>Clear Logs</button>
-      </div>
-
-      <div class="status-bar">
-        <span class={`status-dot status-${handshakeState}`}></span>
-        <span class="status-text">{handshakeMessage}</span>
-      </div>
-    </div>
-
-    <div class="console">
-      <div class="console-output">
-        {#each logs as log}
-          <div class={`log-entry log-${log.type}`}>
-            <span class="log-time">[{log.timestamp}]</span>
-            <span class="log-message">{log.message}</span>
-          </div>
-        {/each}
-      </div>
-
-      <div class="console-input">
-        <input
-          type="text"
-          bind:value={command}
-          on:keydown={handleKeydown}
-          placeholder="Enter command..."
-          disabled={!connected}
-        />
-        <button
-          class="nav-btn"
-          on:click={sendCommand}
-          disabled={!connected || !command.trim()}
-        >
-          Send
+        <button class="nav-btn" on:click={() => (showConsole = !showConsole)}>
+          {showConsole ? "Hide" : "Show"} Console
         </button>
       </div>
+
+      {#if status}
+        {@const statusClass = status.status.toLowerCase()}
+        {@const isDirty = status.revision.toUpperCase().includes("DIRTY")}
+        <div class="control-row">
+          <span class="status-info">
+            Status: <span class="status-value status-{statusClass}"
+              >{status.status}</span
+            >
+          </span>
+          <span>Uptime: {formatUptime(status.uptime_ms)}</span>
+        </div>
+        <div class="control-row">
+          <span class="status-info">
+            Revision: <span
+              class="status-value revision-{isDirty ? 'dirty' : 'clean'}"
+              >{status.revision}</span
+            >
+          </span>
+          <span>Build: {formatBuildDate(status.build_date)}</span>
+        </div>
+      {/if}
     </div>
 
-    {#if lastDataFrame}
-      <section class="data-panel">
-        <h3>Latest Data</h3>
-        <div class="data-grid">
-          <div>
-            <span class="data-label">Sequence</span>
-            <span>{lastDataFrame.seq ?? "—"}</span>
-          </div>
-          <div>
-            <span class="data-label">Temperature</span>
-            <span>
-              {lastDataFrame.temp ?? "—"}
-              {lastDataFrame.temp !== undefined ? "°C" : ""}
-            </span>
-          </div>
-          <div>
-            <span class="data-label">Type</span>
-            <span>{lastDataFrame.type ?? "data"}</span>
-          </div>
-          <div>
-            <span class="data-label">Timestamp</span>
-            <span>
-              {lastDataTimestamp ? lastDataTimestamp.toLocaleTimeString() : "—"}
-            </span>
-          </div>
+    {#if showConsole}
+      <div class="console">
+        <div class="console-output" bind:this={consoleOutput}>
+          {#each logs as log}
+            <div class={`log-entry log-${log.type}`}>
+              <span class="log-time">[{log.timestamp}]</span>
+              <span class="log-message">{log.message}</span>
+            </div>
+          {/each}
         </div>
-        <pre class="data-json">{JSON.stringify(lastDataFrame, null, 2)}</pre>
-      </section>
+      </div>
     {/if}
   </section>
 </main>

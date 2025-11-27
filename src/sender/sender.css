@@ -2,7 +2,6 @@
   margin: 16px 0;
   padding: 16px;
   background: #0c0f13;
-  border: 4px solid var(--edge);
 }
 
 .control-row {
@@ -25,62 +24,26 @@ label {
 select {
   background: var(--blue-700);
   color: var(--text);
-  border: 4px solid var(--edge);
   padding: 6px 8px;
-}
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px 12px;
-  background: #12161d;
-  border: 2px solid var(--edge);
-  border-left: 4px solid var(--blue-500);
-}
-
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #616161;
-  flex-shrink: 0;
-}
-
-.status-dot.status-idle {
-  background: #616161;
-}
-.status-dot.status-waiting {
-  background: #ffb74d;
-}
-.status-dot.status-ok {
-  background: #66bb6a;
-}
-.status-dot.status-warning {
-  background: #ffa726;
-}
-.status-dot.status-error {
-  background: #ef5350;
-}
-
-.status-text {
-  color: var(--text);
-  font-size: 0.9rem;
 }
 
 .console {
   margin-top: 16px;
-  border: 4px solid var(--edge);
   background: #0c0f13;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .console-output {
   height: 300px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px;
   font-family: "Courier New", monospace;
   font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .log-entry {
@@ -96,6 +59,8 @@ select {
 
 .log-message {
   color: var(--text);
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .log-success {
@@ -110,94 +75,57 @@ select {
 .log-rx {
   color: #ff9800;
 }
-.log-hello {
-  color: #4dd0e1;
-}
-.log-data {
-  color: #aed581;
-}
-.log-warning {
-  color: #ffb74d;
-}
 .log-info {
   color: #64b5f6;
 }
 
-.console-input {
-  display: flex;
-  gap: 8px;
-  padding: 8px;
-  border-top: 4px solid var(--edge);
-}
-
-.console-input input {
-  flex: 1;
-  background: var(--blue-700);
-  color: var(--text);
-  border: 4px solid var(--edge);
-  padding: 8px;
-  font-family: "Courier New", monospace;
-}
-
-.console-input input:disabled {
-  opacity: 0.5;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.data-panel {
-  margin-top: 24px;
-  border: 4px solid var(--edge);
-  background: #0c0f13;
-  padding: 16px;
-}
-
-.data-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  margin-bottom: 12px;
-}
-
-.data-grid div {
-  background: #12161d;
-  border: 2px solid var(--edge);
-  padding: 10px 12px;
-}
-
-.data-label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.data-json {
-  margin: 0;
-  padding: 12px;
-  background: #12161d;
-  border: 2px solid var(--edge);
-  color: var(--muted);
-  font-size: 0.85rem;
-  max-height: 220px;
-  overflow: auto;
-}
-
 .warning {
   background: #2d1b1b;
-  border: 4px solid #c62828;
   padding: 12px;
   margin: 16px 0;
-  color: var(--text);
 }
 
 .warning strong {
   color: #ff6b6b;
 }
 
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
+.status-value {
+  font-weight: bold;
+  padding: 2px 6px;
+}
+
+.status-value.status-ok {
+  color: #4caf50;
+}
+
+.status-value.status-working {
+  color: #ffb74d;
+}
+
+.status-value.status-fault {
+  color: #f44336;
+}
+
+.status-value.revision-dirty {
+  color: #f44336;
+  animation: flash-red 1s infinite;
+}
+
+.status-value.revision-clean {
+  color: var(--text);
+}
+
+@keyframes flash-red {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
