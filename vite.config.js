@@ -6,6 +6,12 @@ export default defineConfig({
     plugins: [svelte()],
     publicDir: 'static',
     assetsInclude: ['**/*.zip'], // Allows us to serve static zip packages
+    server: {
+        // For static files
+        fs: {
+            strict: false
+        }
+    }
 })
 
 

@@ -8,6 +8,7 @@
     "build": "python tools/build_bundles.py && vite build",
     "build:bundles": "python tools/build_bundles.py",
     "new-update": "python tools/new_update.py",
+    "update-sch": "node tools/update-sch.js",
     "preview": "vite preview --port 4173"
   },
   "dependencies": {

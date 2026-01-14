@@ -1,0 +1,9 @@
+{
+  "schematics": [
+    {
+      "slug": "Main-Board",
+      "title": "Main Board",
+      "path": "/schematics/Main-Board.html"
+    }
+  ]
+}
