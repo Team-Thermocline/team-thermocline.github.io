@@ -26,6 +26,41 @@ function prompt(question) {
     });
 }
 
+function cleanHtmlContent(htmlContent, absolutePath) {
+    // Extract the base directory from the absolute path
+    const baseDir = absolutePath.substring(0, absolutePath.lastIndexOf('/') + 1);
+    
+    // Get variations of the path (with/without leading slash, with/without trailing slash)
+    const baseDirNoLeadingSlash = baseDir.replace(/^\//, '');
+    const baseDirNoTrailingSlash = baseDir.replace(/\/$/, '');
+    const baseDirNoLeadingNoTrailing = baseDirNoLeadingSlash.replace(/\/$/, '');
+    
+    // Extract just the filename (e.g., "Main-Board.kicad_pro")
+    const fileName = absolutePath.split('/').pop();
+    
+    // Define replacements for absolute paths and DB.ui references
+    const replacements = [
+        { from: absolutePath, to: fileName },                   // Full path to filename
+        { from: baseDir, to: '' },                              // /home/.../Main-Board/
+        { from: baseDirNoLeadingSlash, to: '' },                // home/.../Main-Board/
+        { from: baseDirNoTrailingSlash, to: '' },               // /home/.../Main-Board
+        { from: baseDirNoLeadingNoTrailing, to: '' },           // home/.../Main-Board
+        // Replace DB.ui.schTitle with the filename
+        { from: 'DB.ui.schTitle', to: `"${fileName}"` },        // DB.ui.schTitle -> "Main-Board.kicad_pro"
+    ];
+    
+    let cleaned = htmlContent;
+    
+    // Apply all replacements
+    for (const { from, to } of replacements) {
+        if (from) {
+            cleaned = cleaned.split(from).join(to);
+        }
+    }
+    
+    return cleaned;
+}
+
 function main() {
     (async () => {
         try {
@@ -59,7 +94,7 @@ function main() {
                 // Directory might already exist, that's fine
             }
             
-            console.log(`\n🔄 Generating schematic HTML...`);
+            console.log(`\nGenerating schematic HTML...`);
             console.log(`   Input:  ${absolutePath}`);
             console.log(`   Output: ${outputPath}\n`);
             
@@ -69,6 +104,12 @@ function main() {
                     stdio: 'inherit',
                     cwd: projectRoot
                 });
+                
+                // Post-process: clean up absolute paths in the generated HTML
+                console.log(`Cleaning up HTML content...`);
+                let htmlContent = readFileSync(outputPath, 'utf-8');
+                htmlContent = cleanHtmlContent(htmlContent, absolutePath);
+                writeFileSync(outputPath, htmlContent);
                 
                 // Update manifest file
                 const manifestPath = join(projectRoot, 'src', 'lib', 'schematics.json');
@@ -102,9 +143,9 @@ function main() {
                 
                 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
                 
-                console.log(`\n✅ Schematic HTML generated successfully!`);
-                console.log(`\n📄 Output: ${outputPath}`);
-                console.log(`\n💡 The schematic will be available in the docs section.`);
+                console.log(`\nSchematic HTML generated successfully!`);
+                console.log(`\nOutput: ${outputPath}`);
+                console.log(`\nThe schematic will be available in the docs section.`);
             } catch (e) {
                 console.error(`\n❌ Error running kischvidimer: ${e.message}`);
                 process.exit(1);
