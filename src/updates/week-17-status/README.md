@@ -2,7 +2,7 @@
 date: 2026-01-13
 ---
 
-# Final Week 1 Status
+# Week 17 (Semester 2 Starts)
 
 Completed This Week: 
 
