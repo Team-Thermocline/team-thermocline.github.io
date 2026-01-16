@@ -3,7 +3,6 @@
 // Simple RST-to-HTML converter (basic implementation)
 
 const docFiles = import.meta.glob('/src/docs/**/*.rst', { query: '?raw', import: 'default', eager: true })
-const schematicManifest = import.meta.glob('/src/lib/schematics.json', { query: '?raw', import: 'default', eager: true })
 
 function extractTitle(rstContent) {
     if (!rstContent || typeof rstContent !== 'string') {
@@ -48,6 +47,9 @@ function simpleRstToHtml(rstContent) {
     // Code blocks
     html = html.replace(/::\n\n((?:.+\n?)+)/g, '<pre><code>$1</code></pre>')
     html = html.replace(/``(.+?)``/g, '<code>$1</code>')
+
+    // Links (RST format: `text <url>_`)
+    html = html.replace(/`([^`]+?)\s*<([^>]+)>`_/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
 
     // Lists
     html = html.replace(/^\* (.+)$/gm, '<li>$1</li>')
@@ -94,25 +96,6 @@ export function loadDocs() {
             content: htmlContent,
             path
         })
-    }
-
-    // Load schematics from manifest
-    try {
-        const manifestPath = Object.keys(schematicManifest)[0]
-        if (manifestPath) {
-            const manifestContent = schematicManifest[manifestPath]
-            const manifest = JSON.parse(manifestContent)
-            for (const schematic of manifest.schematics || []) {
-                docs.push({
-                    slug: schematic.slug,
-                    title: schematic.title,
-                    content: `<p><a href="${schematic.path}" target="_blank">View Schematic →</a></p>`,
-                    path: schematic.path
-                })
-            }
-        }
-    } catch (e) {
-        // If manifest can't be loaded, just skip schematics
     }
 
     // Sort alphabetically by title
