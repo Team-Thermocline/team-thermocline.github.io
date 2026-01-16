@@ -37,6 +37,7 @@ main, section, div, article, header, nav {
 .topbar {
   position: relative;
   background: var(--blue-900);
+  overflow: visible;
 }
 
 .brand {
@@ -46,6 +47,7 @@ main, section, div, article, header, nav {
   gap: 16px;
   padding: 6px 0;
   position: relative;
+  overflow: visible;
 }
 
 .logo {
