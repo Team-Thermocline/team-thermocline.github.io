@@ -3,6 +3,7 @@
   import { marked } from "marked";
   import Sender from "./sender/Sender.svelte";
   import Docs from "./Docs.svelte";
+  import Countdown from "./Countdown.svelte";
 
   const navItems = [
     { label: "Home", href: "#home", page: "home" },
@@ -86,6 +87,7 @@
         src="/logos/Thermocline%20Logo.png"
         alt="Team Thermocline Logo"
       />
+      <Countdown />
     </div>
   </div>
   <nav class="navbar">
@@ -126,17 +128,19 @@
         </li>
       </ul>
 
-      <h3>About the project</h3>
+      <h3>Project Resources</h3>
       <ul class="link-list">
         <li>
           <a
-            href="https://github.com/Team-Thermocline/team-thermocline.github.io"
-            >Github for this site</a
+            href="https://cad.onshape.com/documents/0f6d7252fc29b453c7fe25c5/w/f9ad2d1b899e019a4809f833/e/44465f285c45dfca95ecae76?renderMode=0&uiState=6969aaa170ee313f4754e0f0"
+            target="_blank"
+            rel="noopener noreferrer"
+            >CAD Model (Onshape)</a
           >
         </li>
         <li>
           <a href="https://github.com/Team-Thermocline/Controller"
-            >Link to the controller</a
+            >Controller Firmware and Schematics (GitHub)</a
           >
         </li>
       </ul>

@@ -42,8 +42,10 @@ main, section, div, article, header, nav {
 .brand {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   padding: 6px 0;
+  position: relative;
 }
 
 .logo {
