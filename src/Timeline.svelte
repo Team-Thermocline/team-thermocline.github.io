@@ -71,7 +71,9 @@
 
 <div class="timeline-container">
   <div class="timeline-bar"></div>
-  <div class="current-arrow" style="left: {currentPosition}%"></div>
+  <div class="current-arrow" style="left: {currentPosition}%" role="button" tabindex="0">
+    <span class="event-tooltip">now</span>
+  </div>
   {#each events as event}
     <div
       class="event-ball"
@@ -104,13 +106,26 @@
   .current-arrow {
     position: absolute;
     top: 50%;
-    transform: translate(-50%, -100%);
+    transform: translate(-50%, 0);
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 10px solid var(--red-600);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 16px solid var(--red-600);
     z-index: 15;
+    cursor: pointer;
+  }
+  
+  .current-arrow:hover .event-tooltip,
+  .current-arrow:focus-visible .event-tooltip {
+    opacity: 1;
+  }
+  
+  .current-arrow .event-tooltip {
+    bottom: auto;
+    top: 100%;
+    margin-bottom: 20px;
+    margin-top: 30px;
   }
   
   .event-ball {

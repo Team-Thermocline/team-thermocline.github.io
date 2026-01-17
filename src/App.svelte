@@ -146,6 +146,8 @@
           >
         </li>
       </ul>
+
+      <h3>Click on any update below to see the details!</h3>
     </section>
 
     <section class="updates">
@@ -184,6 +186,18 @@
     <Docs />
   {/if}
 </main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <span>© 2026<br>For contact email <a href="mailto:joseph.sedutto@snhu.edu">joseph.sedutto@snhu.edu</a></span>
+      <div class="footer-links">
+        <a href="https://github.com/Team-Thermocline/thermocline.github.io" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://www.snhu.edu/" target="_blank" rel="noopener noreferrer">SNHU</a>
+      </div>
+    </div>
+  </div>
+</footer>
 
 {#if active}
   <div
