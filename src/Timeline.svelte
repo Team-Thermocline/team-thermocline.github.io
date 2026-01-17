@@ -79,7 +79,7 @@
       role="button"
       tabindex="0"
     >
-      <span class="event-tooltip">{event.label}</span>
+      <span class="event-tooltip">{event.label}<br>{new Date(event.timestamp * 1000).toLocaleDateString()}</span>
     </div>
   {/each}
 </div>
@@ -135,6 +135,7 @@
   
   .event-tooltip {
     position: absolute;
+    text-align: center;
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
