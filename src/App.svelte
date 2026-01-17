@@ -4,6 +4,7 @@
   import Sender from "./sender/Sender.svelte";
   import Docs from "./Docs.svelte";
   import Countdown from "./Countdown.svelte";
+  import Timeline from "./Timeline.svelte";
 
   const navItems = [
     { label: "Home", href: "#home", page: "home" },
@@ -100,6 +101,7 @@
           on:click={() => navigate(item.page)}>{item.label}</a
         >
       {/each}
+      <Timeline />
     </div>
   </nav>
   <div class="edge-strip"></div>
