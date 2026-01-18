@@ -192,7 +192,7 @@
     <div class="footer-content">
       <span>© 2026<br><a href="mailto:joseph.sedutto@snhu.edu">Click to Contact</a></span>
       <div class="footer-links">
-        <a href="https://github.com/Team-Thermocline/thermocline.github.io" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/Team-Thermocline/team-thermocline.github.io" target="_blank" rel="noopener noreferrer">Website Source</a>
         <a href="https://www.snhu.edu/" target="_blank" rel="noopener noreferrer">SNHU</a>
       </div>
     </div>
