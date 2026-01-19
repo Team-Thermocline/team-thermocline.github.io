@@ -118,10 +118,17 @@
         simulate real-world engineering challenges and are meant to be a final culmination of
         our engineering skills.
         <br><br>
-        Team Thermocline is one of two teams building a Thermal Testing Chamber as a capstone project for 2025-2026.
-        This site is a public facing hub for
-        our process, deliverables, binaries, CAD, drawings, sourcecode, repair
+        Team Thermocline is
+        
+        <a href="https://ez-bake.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">
+          one of two teams
+        </a>
+        
+        teams building a Thermal Testing Chamber as a capstone project for 2025-2026.
+        This site is a public facing hub for our process, deliverables, binaries, CAD, drawings, source code, repair
         resources and all other aspects related to our project!
+
+        
       </p>
 
       <h3>About SNHU</h3>
