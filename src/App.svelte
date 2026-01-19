@@ -114,8 +114,12 @@
     <section class="content-block">
       <h2>Welcome</h2>
       <p>
-        Team Thermocline is one of two teams working on the 2025-2026 capstone
-        thermal testing chamber project! This site is a public facing hub for
+        Each year, SNHU Capstone teams are tasked with various projects. These projects 
+        simulate real-world engineering challenges and are meant to be a final culmination of
+        our engineering skills.
+        <br><br>
+        Team Thermocline is one of two teams building a Thermal Testing Chamber as a capstone project for 2025-2026.
+        This site is a public facing hub for
         our process, deliverables, binaries, CAD, drawings, sourcecode, repair
         resources and all other aspects related to our project!
       </p>
