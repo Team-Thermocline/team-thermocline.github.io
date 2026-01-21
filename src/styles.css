@@ -356,6 +356,23 @@ main {
   font-size: 18px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rss-link {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.rss-link:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 .updates-empty {

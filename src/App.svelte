@@ -162,7 +162,12 @@
     </section>
 
     <section class="updates">
-      <h2 class="updates-title">Updates</h2>
+      <h2 class="updates-title">
+        Updates
+
+        <!-- RSS Feed -->
+        <a href="/feed.xml" class="rss-link" target="_blank" rel="noopener noreferrer" title="RSS Feed">RSS</a>
+      </h2>
       {#if updates.length === 0}
         <p class="updates-empty">No updates yet.</p>
       {:else}
