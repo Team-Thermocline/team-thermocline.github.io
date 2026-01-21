@@ -9,7 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = resolve(__dirname, '..');
 const updatesDir = join(projectRoot, 'src', 'updates');
-const outputPath = join(projectRoot, 'static', 'feed.xml');
+const distDir = join(projectRoot, 'dist');
+const outputPath = join(distDir, 'feed.xml');
 
 const BASE_URL = 'https://team-thermocline.github.io/';
 
@@ -92,8 +93,8 @@ function findPreviewImage(entryPath, slug) {
         const previewPath = join(entryPath, `preview.${ext}`);
         try {
             if (statSync(previewPath).isFile()) {
-                // Construct the public URL - Vite serves src/ files directly
-                return `/src/updates/${slug}/preview.${ext}`;
+                // Use predictable path: assets/preview-{slug}.{ext}
+                return `/assets/preview-${slug}.${ext}`;
             }
         } catch (err) {
             // File doesn't exist, try next extension

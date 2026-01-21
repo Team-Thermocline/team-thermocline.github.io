@@ -11,6 +11,27 @@ export default defineConfig({
         fs: {
             strict: false
         }
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                assetFileNames: (assetInfo) => {
+                    // Use originalFileNames to get the source file path
+                    const originalPath = assetInfo.originalFileNames?.[0] || assetInfo.name || '';
+                    
+                    // Extract slug from update preview images and bundles
+                    // e.g., /path/to/project/src/updates/verification-integration-test/preview.png
+                    const updatesMatch = originalPath.match(/src[\/\\]updates[\/\\]([^\/\\]+)[\/\\](preview|bundle)\.([^.]+)$/);
+                    if (updatesMatch) {
+                        const [, slug, type, ext] = updatesMatch;
+                        return `assets/${type}-${slug}.${ext}`;
+                    }
+                    
+                    // Default behavior for other assets (keep hash for cache busting)
+                    return 'assets/[name]-[hash][extname]';
+                }
+            }
+        }
     }
 })
 

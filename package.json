@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "python tools/build_bundles.py && node tools/generate-rss.js && vite build",
+    "build": "python tools/build_bundles.py && vite build && node tools/generate-rss.js",
     "build:bundles": "python tools/build_bundles.py",
     "new-update": "python tools/new_update.py",
     "update-sch": "node tools/update-sch.js",
