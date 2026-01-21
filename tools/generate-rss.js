@@ -86,6 +86,24 @@ function formatDate(date) {
     return date.toUTCString();
 }
 
+function findPreviewImage(entryPath, slug) {
+    const previewExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    for (const ext of previewExtensions) {
+        const previewPath = join(entryPath, `preview.${ext}`);
+        try {
+            if (statSync(previewPath).isFile()) {
+                // Construct the public URL - Vite serves src/ files directly
+                return `/src/updates/${slug}/preview.${ext}`;
+            }
+        } catch (err) {
+            // File doesn't exist, try next extension
+            continue;
+        }
+    }
+    // Default preview if none found
+    return '/logos/Thermocline%20PFP.png';
+}
+
 function loadUpdates() {
     const updates = [];
     const entries = readdirSync(updatesDir);
@@ -99,8 +117,9 @@ function loadUpdates() {
             const markdown = readFileSync(readmePath, 'utf-8');
             const { title, blurb, date } = extractTitleAndBlurb(markdown);
             const slug = entry;
+            const previewUrl = findPreviewImage(entryPath, slug);
             
-            updates.push({ slug, title, blurb, markdown, date });
+            updates.push({ slug, title, blurb, markdown, date, previewUrl });
         } catch (err) {
             // Skip if README doesn't exist
             continue;
@@ -120,13 +139,26 @@ function generateRss() {
         const link = `${BASE_URL}#update:${update.slug}`;
         const pubDate = formatDate(update.date);
         const description = escapeXml(update.blurb || 'No description available.');
+        const imageUrl = `${BASE_URL}${update.previewUrl.replace(/^\//, '')}`;
+        
+        // Determine image type from extension
+        const imageExt = update.previewUrl.split('.').pop().toLowerCase();
+        const imageType = imageExt === 'jpg' ? 'image/jpeg' : 
+                         imageExt === 'png' ? 'image/png' :
+                         imageExt === 'gif' ? 'image/gif' :
+                         imageExt === 'webp' ? 'image/webp' : 'image/jpeg';
+        
+        // Use standard RSS 2.0 enclosure tag for images
+        // idk how to do length i think this is okay
+        const mediaContent = update.previewUrl ? `
+      <enclosure url="${imageUrl}" type="${imageType}" length="0"/>` : '';
         
         return `    <item>
       <title>${escapeXml(update.title)}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}</guid>
       <pubDate>${pubDate}</pubDate>
-      <description>${description}</description>
+      <description>${description}</description>${mediaContent}
     </item>`;
     }).join('\n');
     

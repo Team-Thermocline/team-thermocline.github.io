@@ -3,9 +3,9 @@
   <channel>
     <title>Team Thermocline Updates</title>
     <link>https://team-thermocline.github.io/</link>
-    <description>Updates from Team Thermocline - SNHU 2025-2026 capstone thermal testing chamber project.</description>
+    <description>Deliverables and Updates from Team Thermocline - SNHU 25-26</description>
     <language>en-US</language>
-    <lastBuildDate>Wed, 21 Jan 2026 18:25:04 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 21 Jan 2026 18:36:47 GMT</lastBuildDate>
     <atom:link href="https://team-thermocline.github.io/feed.xml" rel="self" type="application/rss+xml"/>
     <item>
       <title>Verification Matrix, Integration &amp; Testing</title>
@@ -13,6 +13,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:verification-integration-test</guid>
       <pubDate>Wed, 21 Jan 2026 00:00:00 GMT</pubDate>
       <description>Thanks whole team for working so hard on this. Submitted wednesday morning.</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/verification-integration-test/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Delta Cdr</title>
@@ -20,6 +21,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:delta-cdr</guid>
       <pubDate>Thu, 15 Jan 2026 00:00:00 GMT</pubDate>
       <description>Thank you Jacob for presenting!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/delta-cdr/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>BOM Ordering</title>
@@ -27,6 +29,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:BOM-ordering</guid>
       <pubDate>Wed, 14 Jan 2026 00:00:00 GMT</pubDate>
       <description>To order the first BOM, download the LCSC BOM file from here: https://github.com/Team-Thermocline/Controller/releases</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/BOM-ordering/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 17 (Semester 2 Starts)</title>
@@ -34,6 +37,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-17-status</guid>
       <pubDate>Tue, 13 Jan 2026 00:00:00 GMT</pubDate>
       <description>Completed This Week:</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>CDR Report</title>
@@ -41,6 +45,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:CDR-report</guid>
       <pubDate>Fri, 19 Dec 2025 00:00:00 GMT</pubDate>
       <description>Complete CDR Report. Thank you to the whole team for all the hard work this semester!</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Data Acceptance Package</title>
@@ -48,6 +53,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:data-acceptance-package</guid>
       <pubDate>Fri, 19 Dec 2025 00:00:00 GMT</pubDate>
       <description>Included are the following:</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/data-acceptance-package/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 15 Status Report</title>
@@ -55,6 +61,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-15-status</guid>
       <pubDate>Fri, 12 Dec 2025 00:00:00 GMT</pubDate>
       <description>- Further development of 3D modeling of parts.</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>CDR Presentation</title>
@@ -62,6 +69,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:cdr-presentation</guid>
       <pubDate>Wed, 10 Dec 2025 00:00:00 GMT</pubDate>
       <description>Joe and Jacob presenting. Download the PDF in this bundle and follow along.</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/cdr-presentation/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>PDR RFA</title>
@@ -69,6 +77,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:pdr-rfa</guid>
       <pubDate>Mon, 17 Nov 2025 00:00:00 GMT</pubDate>
       <description>The PDR Request for action is complete!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/pdr-rfa/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 11 Status Report</title>
@@ -76,6 +85,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-11-status</guid>
       <pubDate>Fri, 14 Nov 2025 00:00:00 GMT</pubDate>
       <description>- Weekly Meeting (11-13-25)</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>PDR Presentation</title>
@@ -83,6 +93,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:pdr-presentation</guid>
       <pubDate>Thu, 06 Nov 2025 00:00:00 GMT</pubDate>
       <description>Thank you Alexandra and Alexia for presenting!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/pdr-presentation/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 10 Status Report</title>
@@ -90,6 +101,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-10-status</guid>
       <pubDate>Tue, 04 Nov 2025 00:00:00 GMT</pubDate>
       <description>Its week ten! PDR is almost here. A draft is included in this bundle.</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>The boards have arrived!</title>
@@ -97,6 +109,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:boards-arrive</guid>
       <pubDate>Tue, 28 Oct 2025 00:00:00 GMT</pubDate>
       <description>Some notes from Ruben today in class, Thank you!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/boards-arrive/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Sheet Metal Order</title>
@@ -104,6 +117,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:sheet-metal</guid>
       <pubDate>Mon, 27 Oct 2025 00:00:00 GMT</pubDate>
       <description>Thank you very much Jacob for doing the inital CAD model!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/sheet-metal/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Adapter board submitted!</title>
@@ -111,6 +125,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:controller-adapter</guid>
       <pubDate>Tue, 21 Oct 2025 00:00:00 GMT</pubDate>
       <description>Order came out to $40.66 about $10.00 more than expected, a shame but, shipping</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/controller-adapter/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Feasability Testing</title>
@@ -118,6 +133,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:feasibility-testing</guid>
       <pubDate>Thu, 16 Oct 2025 00:00:00 GMT</pubDate>
       <description>Presented feasability study on thursday. Thank you for presenting Jacob!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/feasibility-testing/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 6 Status Report</title>
@@ -125,6 +141,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-6-status</guid>
       <pubDate>Fri, 10 Oct 2025 00:00:00 GMT</pubDate>
       <description>- Weekly Meeting (10-7-25)</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>SRR Review</title>
@@ -132,6 +149,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:srr-review</guid>
       <pubDate>Sat, 27 Sep 2025 00:00:00 GMT</pubDate>
       <description>SRR Published and presented! Everyone did a great job. Go team!</description>
+      <enclosure url="https://team-thermocline.github.io/src/updates/srr-review/preview.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 4 Status Report</title>
@@ -139,6 +157,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-4-status</guid>
       <pubDate>Fri, 26 Sep 2025 00:00:00 GMT</pubDate>
       <description>- Weekly Meeting (9-23-25)</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 3 Status Report</title>
@@ -146,6 +165,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-3-status</guid>
       <pubDate>Fri, 19 Sep 2025 00:00:00 GMT</pubDate>
       <description>- Weekly Meeting (9-16-25)</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
     <item>
       <title>Week 2 Status Report</title>
@@ -153,6 +173,7 @@
       <guid isPermaLink="true">https://team-thermocline.github.io/#update:week-2-status</guid>
       <pubDate>Fri, 12 Sep 2025 00:00:00 GMT</pubDate>
       <description>- Research on individual and collective technical questions for project</description>
+      <enclosure url="https://team-thermocline.github.io/logos/Thermocline%20PFP.png" type="image/png" length="0"/>
     </item>
   </channel>
 </rss>
