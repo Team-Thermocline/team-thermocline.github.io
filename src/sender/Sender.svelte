@@ -1,10 +1,13 @@
 <script>
+  import { buildTemperatureCommand } from "./tcode.js";
+
   let port = null;
   let reader = null;
   let writer = null;
   let connected = false;
   let baudRate = 115200;
   let logs = [];
+  let temperature = "";
 
   const baudRates = [9600, 19200, 38400, 57600, 115200];
 
@@ -17,7 +20,13 @@
 
       addLog("Requesting serial port...", "info");
       port = await navigator.serial.requestPort();
-      await port.open({ baudRate });
+      await port.open({ 
+        baudRate: baudRate,
+        dataBits: 8,
+        stopBits: 1,
+        parity: "none",
+        flowControl: "none"
+      });
 
       reader = port.readable.getReader();
       writer = port.writable.getWriter();
@@ -33,7 +42,9 @@
 
   async function disconnect() {
     try {
+      connected = false;
       if (reader) {
+        await reader.cancel();
         reader.releaseLock();
         reader = null;
       }
@@ -45,7 +56,6 @@
         await port.close();
         port = null;
       }
-      connected = false;
       addLog("Disconnected", "info");
     } catch (err) {
       addLog(`Disconnect error: ${err.message}`, "error");
@@ -54,24 +64,14 @@
 
   async function readLoop() {
     const decoder = new TextDecoder();
-    let buffer = "";
     
     try {
       while (connected && reader) {
         const { value, done } = await reader.read();
         if (done) break;
-        if (!value) continue;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          buffer = buffer.slice(newlineIndex + 1);
-          if (line) {
-            addLog(`RX: ${line}`, "rx");
-          }
-        }
+        
+        const text = decoder.decode(value);
+        addLog(`RX: ${text}`, "rx");
       }
     } catch (err) {
       if (connected) {
@@ -98,6 +98,27 @@
   function clearLogs() {
     logs = [];
   }
+
+  async function setTemperature() {
+    if (!connected || !writer) {
+      addLog("Not connected", "error");
+      return;
+    }
+
+    const temp = parseFloat(temperature);
+    if (isNaN(temp)) {
+      addLog("Invalid temperature value", "error");
+      return;
+    }
+
+    try {
+      const command = buildTemperatureCommand(temp);
+      await writer.write(new TextEncoder().encode(command + "\n"));
+      addLog(`TX: ${command}`, "tx");
+    } catch (err) {
+      addLog(`Send error: ${err.message}`, "error");
+    }
+  }
 </script>
 
 <div>
@@ -121,6 +142,14 @@
       <button on:click={disconnect}>Disconnect</button>
     {/if}
     <button on:click={clearLogs}>Clear Log</button>
+  </div>
+
+  <div>
+    <label>
+      Temperature:
+      <input type="number" bind:value={temperature} placeholder="Enter temperature" disabled={!connected} />
+    </label>
+    <button on:click={setTemperature} disabled={!connected}>Set Temperature</button>
   </div>
 
   <div>
