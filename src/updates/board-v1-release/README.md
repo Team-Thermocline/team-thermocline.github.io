@@ -7,6 +7,7 @@ date: 2026-01-29
 
 Thank you Dr. Ruben Del-Rio-Ruiz, Professor Monk, r/embedded and others.
 
+[Click Here to download board files!](https://github.com/Team-Thermocline/Controller/releases/tag/v1.0)
 
 # Fabrication Instructions
 | Instruction            | Dimension |
