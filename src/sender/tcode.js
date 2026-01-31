@@ -38,6 +38,14 @@ export function buildTemperatureCommand(temperature) {
 }
 
 /**
+ * Construct a query command packet.
+ * @returns {string}
+ */
+export function buildQueryCommand() {
+  return withChecksum("Q0");
+}
+
+/**
  * Validate a received tcode packet by checking its checksum
  * @param {string} packet - The received packet
  * @returns {boolean} - True if checksum is valid
