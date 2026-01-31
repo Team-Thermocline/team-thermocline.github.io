@@ -16,21 +16,25 @@ function calculateXORChecksum(str) {
 }
 
 /**
+ * Wrap a command body with `*XX` checksum. (XOR of all chars)
+ * @param {string} body
+ * @returns {string}
+ */
+function withChecksum(body) {
+  const checksum = calculateXORChecksum(body);
+  return `${body}*${checksum}`;
+}
+
+/**
  * Construct a temperature command packet
  * Format: Z0 T<temp>*XX where XX is the hex XOR checksum
  * @param {number} temperature - The temperature value
  * @returns {string} - The complete command packet
  */
 export function buildTemperatureCommand(temperature) {
-  // Build the command without checksum: "Z0 T<temp>*"
   const tempStr = temperature.toString();
-  const commandWithoutChecksum = `Z0 T${tempStr}*`;
-  
-  // Calculate XOR checksum for the entire command
-  const checksum = calculateXORChecksum(commandWithoutChecksum);
-  
-  // Append checksum: "Z0 T<temp>*XX"
-  return `${commandWithoutChecksum}${checksum}`;
+  const body = `Z0 T${tempStr}`;
+  return withChecksum(body);
 }
 
 /**
@@ -46,7 +50,7 @@ export function validatePacket(packet) {
   }
   
   const [, commandPart, receivedChecksum] = match;
-  const calculatedChecksum = calculateXORChecksum(commandPart + '*');
+  const calculatedChecksum = calculateXORChecksum(commandPart);
   
   return calculatedChecksum.toUpperCase() === receivedChecksum.toUpperCase();
 }

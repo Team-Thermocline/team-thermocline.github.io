@@ -8,8 +8,12 @@
   let baudRate = 115200;
   let logs = [];
   let temperature = "";
+  let showKeepalives = true;
+  let rxBuffer = "";
 
   const baudRates = [9600, 19200, 38400, 57600, 115200];
+  const isKeepalive = (log) =>
+    log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
 
   async function connect() {
     try {
@@ -73,8 +77,27 @@
         const { value, done } = await reader.read();
         if (done) break;
         
-        const text = decoder.decode(value);
-        addLog(`RX: ${text}`, "rx");
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+
+        rxBuffer += chunk;
+
+        // Split on newline(s) and log each complete line.
+        // Keep trailing partial line in rxBuffer.
+        const parts = rxBuffer.split(/\r?\n/);
+        rxBuffer = parts.pop() ?? "";
+
+        for (const line of parts) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          addLog(`RX: ${trimmed}`, "rx");
+        }
+
+        // If the device sends keepalive '.' without newline, log it anyway.
+        if (rxBuffer.trim() === ".") {
+          addLog("RX: .", "rx");
+          rxBuffer = "";
+        }
       }
     } catch (err) {
       if (connected) {
@@ -145,6 +168,10 @@
       <button on:click={disconnect}>Disconnect</button>
     {/if}
     <button on:click={clearLogs}>Clear Log</button>
+    <label style="margin-left: 10px;">
+      <input type="checkbox" bind:checked={showKeepalives} />
+      Show keepalives (.)
+    </label>
   </div>
 
   <div>
@@ -158,10 +185,10 @@
   <div>
     <h3>Terminal Log</h3>
     <div style="border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; font-family: monospace; background: #000; color: #0f0;">
-      {#each logs as log}
+      {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
         <div>
           <span>[{log.timestamp}]</span>
-          <span style="color: {log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}">
+          <span style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}">
             {log.message}
           </span>
         </div>
