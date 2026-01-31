@@ -28,6 +28,9 @@
         flowControl: "none"
       });
 
+      // Just one tiny line! rp2040 default usb impl. RELIES on this.
+      await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+
       reader = port.readable.getReader();
       writer = port.writable.getWriter();
       connected = true;
