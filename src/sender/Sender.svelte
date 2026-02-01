@@ -1,4 +1,5 @@
 <script>
+  import { afterUpdate } from "svelte";
   import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
   import Gauge from "./Gauge.svelte";
@@ -14,17 +15,35 @@
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
   let telemetry = null;
+  let manualCommand = "";
+
+  let terminalEl = null;
+  let stickToBottom = true;
 
   const baudRates = [9600, 19200, 38400, 57600, 115200];
   const isKeepalive = (log) =>
     log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
 
+  function updateStickiness() {
+    if (!terminalEl) return;
+    const distanceFromBottom =
+      terminalEl.scrollHeight - terminalEl.scrollTop - terminalEl.clientHeight;
+    stickToBottom = distanceFromBottom < 30;
+  }
+
+  afterUpdate(() => {
+    if (!terminalEl) return;
+    if (stickToBottom) {
+      terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+  });
+
   function startQueryPolling() {
     stopQueryPolling();
-    // send every 3 seconds
+    // send every 1 seconds
     queryInterval = setInterval(() => {
       sendTcode(buildQueryCommand());
-    }, 3000);
+    }, 1000); // TODO: Could make this configurable
   }
 
   function stopQueryPolling() {
@@ -149,6 +168,13 @@
     logs = [];
   }
 
+  async function sendManual() {
+    const cmd = (manualCommand ?? "").trim();
+    if (!cmd) return;
+    await sendTcode(cmd);
+    manualCommand = "";
+  }
+
   async function setTemperature() {
     if (!connected || !writer) {
       addLog("Not connected", "error");
@@ -242,15 +268,38 @@
 
   <div>
     <h3>Terminal Log</h3>
-    <div style="border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; font-family: monospace; background: #000; color: #0f0;">
-      {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
-        <div>
-          <span>[{log.timestamp}]</span>
-          <span style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}">
-            {log.message}
-          </span>
-        </div>
-      {/each}
+    <div
+      style="border: 1px solid #ccc; height: 460px; display: flex; flex-direction: column; background: #000;"
+    >
+      <div
+        bind:this={terminalEl}
+        on:scroll={updateStickiness}
+        style="padding: 10px; overflow-y: auto; flex: 1; font-family: monospace; color: #0f0;"
+      >
+        {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
+          <div>
+            <span>[{log.timestamp}]</span>
+            <span
+              style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}"
+            >
+              {log.message}
+            </span>
+          </div>
+        {/each}
+      </div>
+
+      <div style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid #222;">
+        <input
+          style="flex: 1; font-family: monospace;"
+          placeholder="Type a command and press Enter (e.g. Q0*61)"
+          bind:value={manualCommand}
+          disabled={!connected}
+          on:keydown={(e) => {
+            if (e.key === "Enter") sendManual();
+          }}
+        />
+        <button on:click={sendManual} disabled={!connected || !manualCommand.trim()}>Send</button>
+      </div>
     </div>
   </div>
 </div>
