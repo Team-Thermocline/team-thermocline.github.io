@@ -87,6 +87,17 @@ select:disabled {
   align-items: center;
 }
 
+.build-info {
+  margin-top: 8px;
+  display: grid;
+  gap: 4px;
+}
+
+.build-version.dirty {
+  color: #ff3b30;
+  font-weight: 800;
+}
+
 .gauges {
   display: flex;
   gap: 12px;

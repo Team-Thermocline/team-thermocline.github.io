@@ -42,10 +42,84 @@
   const isKeepalive = (log) =>
     log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
 
+  const isQ0Tx = (log) => log?.type === "tx" && /^TX:\s*Q0\b/i.test(log?.message || "");
+  const isQ0RxData = (log) => log?.type === "rx" && /^RX:\s*data:/i.test(log?.message || "");
+  const isRxOk = (log) =>
+    log?.type === "rx" && /^RX:\s*ok\b/i.test((log?.message || "").trim());
+
+
+
+  // PENDING CHUNK
+  // Its a (little) messy and i could clean this up
+  // but, mostly okay way to reduce the spam of Q0 chatter
+  let pendingQ0 = 0; // 0 = none, 1 = sent, 2 = got data (expect ok)
+  let pendingQ0StartedAt = 0;
+
+  const isQ0Command = (command) => /^Q0\b/i.test((command ?? "").trim());
+  const isDataLine = (line) => /^data:/i.test((line ?? "").trim());
+  const isOkLine = (line) => /^ok\b/i.test((line ?? "").trim());
+  const looksLikeQ0Data = (line) =>
+    /TEMP=|RH=|HEAT=|COOL=|STATE=|SET_TEMP=|SET_RH=|ALARM=/i.test(line ?? "");
+
+  function upsertCollapsedQ0(ts = new Date().toLocaleTimeString()) {
+    const last = logs[logs.length - 1];
+    if (last?.type === "info" && last?.message === "[ ... ]") {
+      logs = [...logs.slice(0, -1), { ...last, timestamp: ts }];
+      return;
+    }
+    logs = [
+      ...logs,
+      {
+        message: "[ ... ]",
+        type: "info",
+        timestamp: ts,
+      },
+    ];
+    if (logs.length > 1000) logs = logs.slice(-1000);
+  }
+
+  const buildDisplayLogs = (allLogs) => {
+    const base = showKeepalives ? allLogs : allLogs.filter((l) => !isKeepalive(l));
+    if (showUpdates) return base;
+
+    const out = [];
+    for (let i = 0; i < base.length; i++) {
+      const log = base[i];
+
+      // Collapse: TX Q0 + RX data + RX ok  =>  [ ... ]
+      if (isQ0Tx(log) && isQ0RxData(base[i + 1]) && isRxOk(base[i + 2])) {
+        const endTs =
+          base[i + 2]?.timestamp ?? base[i + 1]?.timestamp ?? log.timestamp;
+        const last = out[out.length - 1];
+        if (last?.type === "info" && last?.message === "[ ... ]") {
+          last.timestamp = endTs;
+        } else {
+          out.push({ timestamp: endTs, type: "info", message: "[ ... ]" });
+        }
+        i += 2;
+        continue;
+      }
+
+      out.push(log);
+    }
+    return out;
+  };
+
+  $: displayLogs = buildDisplayLogs(logs);
+
   const asBool = (v) => v === true;
   const asNumber = (v) => (typeof v === "number" ? v : Number(v));
 
   $: alarmValue = telemetry?.ALARM == null ? 0 : asNumber(telemetry.ALARM);
+
+  $: buildVersion = telemetry?.BUILD ?? null;
+  $: builderName = telemetry?.BUILDER ?? null;
+  $: buildDateSec = telemetry?.BUILD_DATE ?? null;
+  $: buildDateText =
+    typeof buildDateSec === "number" && Number.isFinite(buildDateSec)
+      ? new Date(buildDateSec * 1000).toLocaleString()
+      : null;
+  $: buildIsDirty = typeof buildVersion === "string" && buildVersion.includes("-dirty");
 
   $: statusStates = {
     connection: connected ? "green" : lastConnectionError ? "blink-red" : "blink-yellow",
@@ -95,8 +169,18 @@
   async function sendTcode(command) {
     if (!connected || !writer) return;
     try {
+      if (isQ0Command(command)) {
+        pendingQ0 = 1;
+        pendingQ0StartedAt = Date.now();
+      }
+
       await writer.write(new TextEncoder().encode(command + "\n"));
-      addLog(`TX: ${command}`, "tx");
+      if (!showUpdates && isQ0Command(command)) {
+        // Printer-style terminal: collapse Q0 chatter into one line.
+        upsertCollapsedQ0();
+      } else {
+        addLog(`TX: ${command}`, "tx");
+      }
     } catch (err) {
       addLog(`Send error: ${err.message}`, "error");
     }
@@ -130,6 +214,7 @@
 
       addLog(`Connected at ${baudRate} baud`, "success");
       startQueryPolling();
+      runQ1StartupQueries();
       readLoop();
     } catch (err) {
       addLog(`Connection failed: ${err.message}`, "error");
@@ -143,6 +228,8 @@
       connected = false;
       stopQueryPolling();
       lastConnectionError = null;
+      pendingQ0 = 0;
+      pendingQ0StartedAt = 0;
       if (reader) {
         await reader.cancel();
         reader.releaseLock();
@@ -173,6 +260,38 @@
         const chunk = decoder.decode(value, { stream: true });
         const lines = lineProcessor.push(chunk);
         for (const line of lines) {
+          // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
+          if (!showUpdates && pendingQ0 > 0) {
+            // expire a stuck pending Q0 so we don't swallow other traffic forever
+            if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > 5000) {
+              pendingQ0 = 0;
+              pendingQ0StartedAt = 0;
+            }
+
+            if (isDataLine(line) && looksLikeQ0Data(line)) {
+              pendingQ0 = 2;
+
+              // still parse telemetry even if we hide the line
+              const parsed = parseTelemetryLine(line);
+              if (parsed) {
+                telemetry = {
+                  ...telemetry,
+                  ...parsed,
+                  _receivedAt: new Date().toLocaleTimeString(),
+                };
+              }
+
+              upsertCollapsedQ0();
+              continue;
+            }
+            if (pendingQ0 === 2 && isOkLine(line)) {
+              pendingQ0 = 0;
+              pendingQ0StartedAt = 0;
+              upsertCollapsedQ0();
+              continue;
+            }
+          }
+
           const parsed = parseTelemetryLine(line);
           if (parsed) {
             telemetry = {
@@ -237,6 +356,21 @@
       addLog(`Send error: ${err.message}`, "error");
     }
   }
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function runQ1StartupQueries() {
+    // fire-and-forget; we don't need to block the connect flow
+    try {
+      await sendTcode("Q1 BUILD");
+      await sleep(2000);
+      await sendTcode("Q1 BUILDER");
+      await sleep(2000);
+      await sendTcode("Q1 BUILD_DATE");
+    } catch {
+      // ignore
+    }
+  }
 </script>
 
 <div class="sender">
@@ -278,6 +412,17 @@
             <input type="checkbox" bind:checked={showUpdates} />
             Show updates (Q0 ...)
           </label>
+
+          <div class="build-info">
+            <div>
+              Build:
+              <span class="build-version" class:dirty={buildIsDirty}>
+                {buildVersion ?? "(unknown)"}
+              </span>
+            </div>
+            <div>Builder: {builderName ?? "(unknown)"}</div>
+            <div>Build date: {buildDateText ?? "(unknown)"}</div>
+          </div>
         </div>
       </div>
 
@@ -337,7 +482,7 @@
           bind:this={terminalEl}
           on:scroll={updateStickiness}
         >
-          {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
+          {#each displayLogs as log}
             <div class="log-line">
               <span class="ts">[{log.timestamp}]</span>
               <span
