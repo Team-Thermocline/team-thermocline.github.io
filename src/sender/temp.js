@@ -5,7 +5,7 @@ export const finiteOrNull = (n) =>
   typeof n === "number" && Number.isFinite(n) ? n : null;
 
 /**
- * Build UI-friendly temperature values while keeping °C as the source of truth.
+ * Build a UI gauge model
  * @param {{
  *  telemetry: any,
  *  showFahrenheit: boolean,

@@ -6,6 +6,7 @@
   import { fToC, getTempUiModel } from "./temp.js";
   import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
   import Gauge from "./Gauge.svelte";
+  import StatusGrid from "./StatusGrid.svelte";
 
   let port = null;
   let reader = null;
@@ -24,6 +25,7 @@
   let terminalEl = null;
   let stickToBottom = true;
   let showFahrenheit = false;
+  let lastConnectionError = null;
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -38,6 +40,24 @@
   const baudRates = [9600, 19200, 38400, 57600, 115200];
   const isKeepalive = (log) =>
     log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
+
+  const asBool = (v) => v === true;
+  const asNumber = (v) => (typeof v === "number" ? v : Number(v));
+
+  $: alarmValue = telemetry?.ALARM == null ? 0 : asNumber(telemetry.ALARM);
+
+  $: statusStates = {
+    connection: connected ? "green" : lastConnectionError ? "blink-red" : "blink-yellow",
+    heat: asBool(telemetry?.HEAT) ? "blink-yellow" : "off",
+    cool: asBool(telemetry?.COOL) ? "blink-yellow" : "off",
+    fault: alarmValue !== 0 ? "blink-red" : "off",
+  };
+
+  async function handleStatusActivate(key) {
+    if (key !== "connection") return;
+    if (connected) await disconnect();
+    else await connect();
+  }
 
   function updateStickiness() {
     stickToBottom = computeStickToBottom(terminalEl, 30);
@@ -82,6 +102,7 @@
         return;
       }
 
+      lastConnectionError = null;
       addLog("Requesting serial port...", "info");
       port = await navigator.serial.requestPort();
       await port.open({ 
@@ -106,6 +127,7 @@
     } catch (err) {
       addLog(`Connection failed: ${err.message}`, "error");
       connected = false;
+      lastConnectionError = err?.message || String(err);
     }
   }
 
@@ -113,6 +135,7 @@
     try {
       connected = false;
       stopQueryPolling();
+      lastConnectionError = null;
       if (reader) {
         await reader.cancel();
         reader.releaseLock();
@@ -282,6 +305,14 @@
           setpoint={telemetry?.SET_RH}
           setpointZone="under"
           debugForceNeedles={debugForceGaugeNeedles}
+        />
+      </div>
+
+      <div class="box status-panel">
+        <StatusGrid
+          states={statusStates}
+          clickableKeys={["connection"]}
+          onCellActivate={handleStatusActivate}
         />
       </div>
     </div>
