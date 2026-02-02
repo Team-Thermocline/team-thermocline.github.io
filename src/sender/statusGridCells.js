@@ -13,6 +13,6 @@ export const STATUS_CELLS = [
 
   { key: "door_safe", label: "DOOR" },
   { key: "hot_exhaust", label: "EXHAUST" },
-  { key: "unused_1", label: "TEST" },
+  { key: "test", label: "TEST" },
 ];
 

@@ -26,6 +26,7 @@
   let stickToBottom = true;
   let showFahrenheit = false;
   let lastConnectionError = null;
+  let TEST_MODE = false;
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -35,7 +36,7 @@
     maxC: 80,
     bandC: TEMP_BAND_C,
   });
-  const debugForceGaugeNeedles = true;
+  $: debugForceGaugeNeedles = TEST_MODE;
 
   const baudRates = [9600, 19200, 38400, 57600, 115200];
   const isKeepalive = (log) =>
@@ -51,12 +52,18 @@
     heat: asBool(telemetry?.HEAT) ? "blink-yellow" : "off",
     cool: asBool(telemetry?.COOL) ? "blink-yellow" : "off",
     fault: alarmValue !== 0 ? "blink-red" : "off",
+    test: TEST_MODE ? "blink-red" : "off",
   };
 
   async function handleStatusActivate(key) {
-    if (key !== "connection") return;
-    if (connected) await disconnect();
-    else await connect();
+    if (key === "connection") {
+      if (connected) await disconnect();
+      else await connect();
+      return;
+    }
+    if (key === "test") {
+      TEST_MODE = !TEST_MODE;
+    }
   }
 
   function updateStickiness() {
@@ -311,7 +318,7 @@
       <div class="box status-panel">
         <StatusGrid
           states={statusStates}
-          clickableKeys={["connection"]}
+          clickableKeys={["connection", "test"]}
           onCellActivate={handleStatusActivate}
         />
       </div>
