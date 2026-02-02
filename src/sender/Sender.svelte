@@ -27,6 +27,9 @@
   let showFahrenheit = false;
   let lastConnectionError = null;
   let TEST_MODE = false;
+  let q1BuildDone = false;
+  let q1BuilderDone = false;
+  let q1BuildDateDone = false;
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -120,13 +123,29 @@
       ? new Date(buildDateSec * 1000).toLocaleString()
       : null;
   $: buildIsDirty = typeof buildVersion === "string" && buildVersion.includes("-dirty");
+  $: q1Complete = q1BuildDone && q1BuilderDone && q1BuildDateDone;
+
+  function applyParsedTelemetry(parsed) {
+    if (!parsed) return;
+
+    if (Object.prototype.hasOwnProperty.call(parsed, "BUILD")) q1BuildDone = true;
+    if (Object.prototype.hasOwnProperty.call(parsed, "BUILDER")) q1BuilderDone = true;
+    if (Object.prototype.hasOwnProperty.call(parsed, "BUILD_DATE")) q1BuildDateDone = true;
+
+    telemetry = {
+      ...telemetry,
+      ...parsed,
+      _receivedAt: new Date().toLocaleTimeString(),
+    };
+  }
 
   $: statusStates = {
-    connection: connected ? "green" : lastConnectionError ? "blink-red" : "blink-yellow",
+    connection: lastConnectionError ? "blink-red" : connected ? "green" : "blink-yellow",
     heat: asBool(telemetry?.HEAT) ? "blink-yellow" : "off",
     cool: asBool(telemetry?.COOL) ? "blink-yellow" : "off",
     fault: alarmValue !== 0 ? "blink-red" : "off",
     test: TEST_MODE ? "blink-red" : "off",
+    ready: connected ? (q1Complete ? "green" : "blink-yellow") : "off",
   };
 
   async function handleStatusActivate(key) {
@@ -182,6 +201,9 @@
         addLog(`TX: ${command}`, "tx");
       }
     } catch (err) {
+      if ((err?.message || "").toLowerCase().includes("device has been lost")) {
+        lastConnectionError = err?.message || String(err);
+      }
       addLog(`Send error: ${err.message}`, "error");
     }
   }
@@ -194,6 +216,9 @@
       }
 
       lastConnectionError = null;
+      q1BuildDone = false;
+      q1BuilderDone = false;
+      q1BuildDateDone = false;
       addLog("Requesting serial port...", "info");
       port = await navigator.serial.requestPort();
       await port.open({ 
@@ -272,14 +297,7 @@
               pendingQ0 = 2;
 
               // still parse telemetry even if we hide the line
-              const parsed = parseTelemetryLine(line);
-              if (parsed) {
-                telemetry = {
-                  ...telemetry,
-                  ...parsed,
-                  _receivedAt: new Date().toLocaleTimeString(),
-                };
-              }
+              applyParsedTelemetry(parseTelemetryLine(line));
 
               upsertCollapsedQ0();
               continue;
@@ -292,14 +310,7 @@
             }
           }
 
-          const parsed = parseTelemetryLine(line);
-          if (parsed) {
-            telemetry = {
-              ...telemetry,
-              ...parsed,
-              _receivedAt: new Date().toLocaleTimeString(),
-            };
-          }
+          applyParsedTelemetry(parseTelemetryLine(line));
           addLog(`RX: ${line}`, "rx");
         }
       }
