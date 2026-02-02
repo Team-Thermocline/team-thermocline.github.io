@@ -46,6 +46,13 @@ main, section, div, article, header, nav {
   padding: 0 24px;
 }
 
+.container-wide {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
 /* Top bar */
 .topbar {
   position: relative;

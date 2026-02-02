@@ -1,0 +1,185 @@
+.sender {
+  padding: 12px;
+}
+
+.content {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.top-row {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.box {
+  border: 1px solid #2b2b2b;
+  border-radius: 10px;
+  padding: 12px;
+  background: #111;
+  color: #eee;
+}
+
+.box-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+  opacity: 0.95;
+}
+
+.connection {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+select,
+input {
+  background: #1c1c1c;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  outline: none;
+}
+
+button {
+  background: #242424;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.toggles {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  font-size: 0.95rem;
+}
+
+.toggles label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.gauges {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.gauges .gauge {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+}
+
+.gauge-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.gauge-controls input {
+  width: auto;
+}
+
+.graph,
+.terminal {
+  margin-top: 14px;
+}
+
+.graph-placeholder {
+  height: 220px;
+  border: 1px dashed #3a3a3a;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #aaa;
+}
+
+.terminal-shell {
+  border: 1px solid #1f1f1f;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  width: 100%;
+}
+
+.terminal-scroll {
+  padding: 10px;
+  height: 460px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  color: #0f0;
+}
+
+.log-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.ts {
+  opacity: 0.8;
+  flex: 0 0 auto;
+}
+
+.msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.terminal-input {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #222;
+  background: #0b0b0b;
+}
+
+.terminal-input .manual {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+@media (max-width: 900px) {
+  .content {
+    width: 95%;
+    min-width: 0;
+  }
+  .connection {
+    flex: 1 1 320px;
+  }
+}
+

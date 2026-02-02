@@ -109,7 +109,7 @@
   <div class="edge-strip"></div>
 </header>
 
-<main class="container">
+<main class={currentPage === "sender" ? "container-wide" : "container"}>
   {#if currentPage === "home"}
     <section class="content-block">
       <h2>Welcome</h2>

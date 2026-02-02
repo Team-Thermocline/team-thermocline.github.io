@@ -1,7 +1,10 @@
 <script>
   import { afterUpdate } from "svelte";
+  import "./Sender.css";
   import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
+  import { fToC, getTempUiModel } from "./temp.js";
+  import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
   import Gauge from "./Gauge.svelte";
 
   let port = null;
@@ -11,7 +14,8 @@
   let baudRate = 115200;
   let logs = [];
   let temperature = "";
-  let showKeepalives = true;
+  let showKeepalives = false;
+  let showUpdates = false;
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
   let telemetry = null;
@@ -19,22 +23,30 @@
 
   let terminalEl = null;
   let stickToBottom = true;
+  let showFahrenheit = false;
+
+  const TEMP_BAND_C = 3;
+  $: tempUi = getTempUiModel({
+    telemetry,
+    showFahrenheit,
+    minC: -50,
+    maxC: 80,
+    bandC: TEMP_BAND_C,
+  });
+  const debugForceGaugeNeedles = true;
 
   const baudRates = [9600, 19200, 38400, 57600, 115200];
   const isKeepalive = (log) =>
     log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
 
   function updateStickiness() {
-    if (!terminalEl) return;
-    const distanceFromBottom =
-      terminalEl.scrollHeight - terminalEl.scrollTop - terminalEl.clientHeight;
-    stickToBottom = distanceFromBottom < 30;
+    stickToBottom = computeStickToBottom(terminalEl, 30);
   }
 
   afterUpdate(() => {
     if (!terminalEl) return;
     if (stickToBottom) {
-      terminalEl.scrollTop = terminalEl.scrollHeight;
+      scrollToBottom(terminalEl);
     }
   });
 
@@ -181,14 +193,15 @@
       return;
     }
 
-    const temp = parseFloat(temperature);
-    if (isNaN(temp)) {
+    const raw = parseFloat(temperature);
+    if (isNaN(raw)) {
       addLog("Invalid temperature value", "error");
       return;
     }
 
     try {
-      const command = buildTemperatureCommand(temp);
+      const tempCToSend = showFahrenheit ? fToC(raw) : raw;
+      const command = buildTemperatureCommand(tempCToSend);
       await sendTcode(command);
     } catch (err) {
       addLog(`Send error: ${err.message}`, "error");
@@ -196,109 +209,121 @@
   }
 </script>
 
-<div>
-  <h2>Serial Terminal</h2>
+<div class="sender">
+  <div class="content">
+    <div class="top-row">
+      <div class="box connection">
+        <div class="box-title">Connection</div>
 
-  <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0;">
-    <Gauge
-      label="Temperature"
-      unit="°C"
-      min={0}
-      max={100}
-      value={telemetry?.TEMP}
-      setpoint={telemetry?.SET_TEMP}
-    />
-    <Gauge
-      label="Humidity"
-      unit="%"
-      min={0}
-      max={100}
-      value={telemetry?.RH}
-      setpoint={telemetry?.SET_RH}
-    />
-  </div>
+        <div class="field">
+          <label>
+            Baud Rate
+            <select bind:value={baudRate} disabled={connected}>
+              {#each baudRates as rate}
+                <option value={rate}>{rate}</option>
+              {/each}
+            </select>
+          </label>
+        </div>
 
-  <div>
-    <label>
-      Baud Rate:
-      <select bind:value={baudRate} disabled={connected}>
-        {#each baudRates as rate}
-          <option value={rate}>{rate}</option>
-        {/each}
-      </select>
-    </label>
-  </div>
+        <div class="button-row">
+          {#if !connected}
+            <button on:click={connect}>Connect</button>
+          {:else}
+            <button on:click={disconnect}>Disconnect</button>
+          {/if}
+          <button on:click={clearLogs}>Clear Log</button>
+        </div>
 
-  <div>
-    {#if !connected}
-      <button on:click={connect}>Connect</button>
-    {:else}
-      <button on:click={disconnect}>Disconnect</button>
-    {/if}
-    <button on:click={clearLogs}>Clear Log</button>
-    <label style="margin-left: 10px;">
-      <input type="checkbox" bind:checked={showKeepalives} />
-      Show keepalives (.)
-    </label>
-  </div>
-
-  <div>
-    <label>
-      Temperature:
-      <input type="number" bind:value={temperature} placeholder="Enter temperature" disabled={!connected} />
-    </label>
-    <button on:click={setTemperature} disabled={!connected}>Set Temperature</button>
-  </div>
-
-  <div style="border: 1px solid #ccc; padding: 10px; margin-top: 10px;">
-    <strong>Latest Telemetry</strong>
-    {#if telemetry}
-      <div>Received: {telemetry._receivedAt}</div>
-      <div>TEMP: {telemetry.TEMP}</div>
-      <div>RH: {telemetry.RH}</div>
-      <div>HEAT: {telemetry.HEAT}</div>
-      <div>STATE: {telemetry.STATE}</div>
-      <div>SET_TEMP: {telemetry.SET_TEMP}</div>
-      <div>SET_RH: {telemetry.SET_RH}</div>
-      <div>ALARM: {telemetry.ALARM}</div>
-    {:else}
-      <div>(waiting for data...)</div>
-    {/if}
-  </div>
-
-  <div>
-    <h3>Terminal Log</h3>
-    <div
-      style="border: 1px solid #ccc; height: 460px; display: flex; flex-direction: column; background: #000;"
-    >
-      <div
-        bind:this={terminalEl}
-        on:scroll={updateStickiness}
-        style="padding: 10px; overflow-y: auto; flex: 1; font-family: monospace; color: #0f0;"
-      >
-        {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
-          <div>
-            <span>[{log.timestamp}]</span>
-            <span
-              style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}"
-            >
-              {log.message}
-            </span>
-          </div>
-        {/each}
+        <div class="toggles">
+          <label>
+            <input type="checkbox" bind:checked={showFahrenheit} />
+            Display °F
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={showKeepalives} />
+            Show keepalives (.)
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={showUpdates} />
+            Show updates (Q0 ...)
+          </label>
+        </div>
       </div>
 
-      <div style="display: flex; gap: 8px; padding: 10px; border-top: 1px solid #222;">
-        <input
-          style="flex: 1; font-family: monospace;"
-          placeholder="Type a command and press Enter (e.g. Q0*61)"
-          bind:value={manualCommand}
-          disabled={!connected}
-          on:keydown={(e) => {
-            if (e.key === "Enter") sendManual();
-          }}
+      <div class="gauges">
+        <Gauge
+          label="Temperature"
+          unit={tempUi.unit}
+          min={tempUi.gaugeMin}
+          max={tempUi.gaugeMax}
+          value={tempUi.tempDisplay}
+          setpoint={tempUi.setTempDisplay}
+          setpointBand={tempUi.bandDisplay}
+          debugForceNeedles={debugForceGaugeNeedles}
+        >
+          <div class="gauge-controls">
+            <input
+              type="number"
+              bind:value={temperature}
+              placeholder={`Set (${tempUi.unit})`}
+              disabled={!connected}
+            />
+            <button on:click={setTemperature} disabled={!connected}>Set</button>
+          </div>
+        </Gauge>
+
+        <Gauge
+          label="Humidity"
+          unit="%"
+          min={0}
+          max={100}
+          value={telemetry?.RH}
+          setpoint={telemetry?.SET_RH}
+          setpointZone="under"
+          debugForceNeedles={debugForceGaugeNeedles}
         />
-        <button on:click={sendManual} disabled={!connected || !manualCommand.trim()}>Send</button>
+      </div>
+    </div>
+
+    <div class="box graph">
+      <div class="box-title">Graph</div>
+      <div class="graph-placeholder">(JOE PUT A GRAPH HERE)</div>
+    </div>
+
+    <div class="box terminal">
+      <div class="box-title">Terminal</div>
+      <div class="terminal-shell">
+        <div
+          class="terminal-scroll"
+          bind:this={terminalEl}
+          on:scroll={updateStickiness}
+        >
+          {#each (showKeepalives ? logs : logs.filter((l) => !isKeepalive(l))) as log}
+            <div class="log-line">
+              <span class="ts">[{log.timestamp}]</span>
+              <span
+                class="msg"
+                style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}"
+              >
+                {log.message}
+              </span>
+            </div>
+          {/each}
+        </div>
+
+        <div class="terminal-input">
+          <input
+            class="manual"
+            placeholder="Type a command and press Enter (e.g. Q0*61)"
+            bind:value={manualCommand}
+            disabled={!connected}
+            on:keydown={(e) => {
+              if (e.key === "Enter") sendManual();
+            }}
+          />
+          <button on:click={sendManual} disabled={!connected || !manualCommand.trim()}>Send</button>
+        </div>
       </div>
     </div>
   </div>
