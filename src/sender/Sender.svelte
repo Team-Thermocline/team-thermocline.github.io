@@ -1,23 +1,189 @@
 <script>
-  import "./sender.css";
-  import { parseJsonLine } from "./logic.js";
+  import { afterUpdate } from "svelte";
+  import "./Sender.css";
+  import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
+  import { createLineProcessor, parseTelemetryLine } from "./rx.js";
+  import { fToC, getTempUiModel } from "./temp.js";
+  import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
+  import Gauge from "./Gauge.svelte";
+  import StatusGrid from "./StatusGrid.svelte";
 
   let port = null;
   let reader = null;
   let writer = null;
   let connected = false;
-  let logs = [];
   let baudRate = 115200;
-  let autoConnect = true;
+  let logs = [];
+  let temperature = "";
+  let showKeepalives = false;
+  let showUpdates = false;
+  let lineProcessor = createLineProcessor();
+  let queryInterval = null;
+  let telemetry = null;
+  let manualCommand = "";
 
-  let status = null;
-  let statusInterval = null;
-  let pingInterval = null;
-  let showConsole = true;
-  let consoleOutput = null;
+  let terminalEl = null;
+  let stickToBottom = true;
+  let showFahrenheit = false;
+  let lastConnectionError = null;
+  let TEST_MODE = false;
 
-  $: if (autoConnect && !connected && navigator.serial) {
-    connect();
+  const TEMP_BAND_C = 3;
+  $: tempUi = getTempUiModel({
+    telemetry,
+    showFahrenheit,
+    minC: -50,
+    maxC: 80,
+    bandC: TEMP_BAND_C,
+  });
+  $: debugForceGaugeNeedles = TEST_MODE;
+
+  const baudRates = [9600, 19200, 38400, 57600, 115200];
+  const isKeepalive = (log) =>
+    log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
+
+  const isQ0Tx = (log) => log?.type === "tx" && /^TX:\s*Q0\b/i.test(log?.message || "");
+  const isQ0RxData = (log) => log?.type === "rx" && /^RX:\s*data:/i.test(log?.message || "");
+  const isRxOk = (log) =>
+    log?.type === "rx" && /^RX:\s*ok\b/i.test((log?.message || "").trim());
+
+
+
+  // PENDING CHUNK
+  // Its a (little) messy and i could clean this up
+  // but, mostly okay way to reduce the spam of Q0 chatter
+  let pendingQ0 = 0; // 0 = none, 1 = sent, 2 = got data (expect ok)
+  let pendingQ0StartedAt = 0;
+
+  const isQ0Command = (command) => /^Q0\b/i.test((command ?? "").trim());
+  const isDataLine = (line) => /^data:/i.test((line ?? "").trim());
+  const isOkLine = (line) => /^ok\b/i.test((line ?? "").trim());
+  const looksLikeQ0Data = (line) =>
+    /TEMP=|RH=|HEAT=|COOL=|STATE=|SET_TEMP=|SET_RH=|ALARM=/i.test(line ?? "");
+
+  function upsertCollapsedQ0(ts = new Date().toLocaleTimeString()) {
+    const last = logs[logs.length - 1];
+    if (last?.type === "info" && last?.message === "[ ... ]") {
+      logs = [...logs.slice(0, -1), { ...last, timestamp: ts }];
+      return;
+    }
+    logs = [
+      ...logs,
+      {
+        message: "[ ... ]",
+        type: "info",
+        timestamp: ts,
+      },
+    ];
+    if (logs.length > 1000) logs = logs.slice(-1000);
+  }
+
+  const buildDisplayLogs = (allLogs) => {
+    const base = showKeepalives ? allLogs : allLogs.filter((l) => !isKeepalive(l));
+    if (showUpdates) return base;
+
+    const out = [];
+    for (let i = 0; i < base.length; i++) {
+      const log = base[i];
+
+      // Collapse: TX Q0 + RX data + RX ok  =>  [ ... ]
+      if (isQ0Tx(log) && isQ0RxData(base[i + 1]) && isRxOk(base[i + 2])) {
+        const endTs =
+          base[i + 2]?.timestamp ?? base[i + 1]?.timestamp ?? log.timestamp;
+        const last = out[out.length - 1];
+        if (last?.type === "info" && last?.message === "[ ... ]") {
+          last.timestamp = endTs;
+        } else {
+          out.push({ timestamp: endTs, type: "info", message: "[ ... ]" });
+        }
+        i += 2;
+        continue;
+      }
+
+      out.push(log);
+    }
+    return out;
+  };
+
+  $: displayLogs = buildDisplayLogs(logs);
+
+  const asBool = (v) => v === true;
+  const asNumber = (v) => (typeof v === "number" ? v : Number(v));
+
+  $: alarmValue = telemetry?.ALARM == null ? 0 : asNumber(telemetry.ALARM);
+
+  $: buildVersion = telemetry?.BUILD ?? null;
+  $: builderName = telemetry?.BUILDER ?? null;
+  $: buildDateSec = telemetry?.BUILD_DATE ?? null;
+  $: buildDateText =
+    typeof buildDateSec === "number" && Number.isFinite(buildDateSec)
+      ? new Date(buildDateSec * 1000).toLocaleString()
+      : null;
+  $: buildIsDirty = typeof buildVersion === "string" && buildVersion.includes("-dirty");
+
+  $: statusStates = {
+    connection: connected ? "green" : lastConnectionError ? "blink-red" : "blink-yellow",
+    heat: asBool(telemetry?.HEAT) ? "blink-yellow" : "off",
+    cool: asBool(telemetry?.COOL) ? "blink-yellow" : "off",
+    fault: alarmValue !== 0 ? "blink-red" : "off",
+    test: TEST_MODE ? "blink-red" : "off",
+  };
+
+  async function handleStatusActivate(key) {
+    if (key === "connection") {
+      if (connected) await disconnect();
+      else await connect();
+      return;
+    }
+    if (key === "test") {
+      TEST_MODE = !TEST_MODE;
+    }
+  }
+
+  function updateStickiness() {
+    stickToBottom = computeStickToBottom(terminalEl, 30);
+  }
+
+  afterUpdate(() => {
+    if (!terminalEl) return;
+    if (stickToBottom) {
+      scrollToBottom(terminalEl);
+    }
+  });
+
+  function startQueryPolling() {
+    stopQueryPolling();
+    // send every 1 seconds
+    queryInterval = setInterval(() => {
+      sendTcode(buildQueryCommand());
+    }, 1000); // TODO: Could make this configurable
+  }
+
+  function stopQueryPolling() {
+    if (queryInterval) {
+      clearInterval(queryInterval);
+      queryInterval = null;
+    }
+  }
+
+  async function sendTcode(command) {
+    if (!connected || !writer) return;
+    try {
+      if (isQ0Command(command)) {
+        pendingQ0 = 1;
+        pendingQ0StartedAt = Date.now();
+      }
+
+      await writer.write(new TextEncoder().encode(command + "\n"));
+      if (!showUpdates && isQ0Command(command)) {
+        // Printer-style terminal: collapse Q0 chatter into one line.
+        upsertCollapsedQ0();
+      } else {
+        addLog(`TX: ${command}`, "tx");
+      }
+    } catch (err) {
+      addLog(`Send error: ${err.message}`, "error");
+    }
   }
 
   async function connect() {
@@ -27,28 +193,45 @@
         return;
       }
 
+      lastConnectionError = null;
       addLog("Requesting serial port...", "info");
       port = await navigator.serial.requestPort();
-      await port.open({ baudRate });
+      await port.open({ 
+        baudRate: baudRate,
+        dataBits: 8,
+        stopBits: 1,
+        parity: "none",
+        flowControl: "none"
+      });
+
+      // Just one tiny line! rp2040 default usb impl. RELIES on this.
+      await port.setSignals({ dataTerminalReady: true, requestToSend: true });
 
       reader = port.readable.getReader();
       writer = port.writable.getWriter();
       connected = true;
+      lineProcessor.reset();
 
-      addLog("Connected", "success");
+      addLog(`Connected at ${baudRate} baud`, "success");
+      startQueryPolling();
+      runQ1StartupQueries();
       readLoop();
-      startStatusPolling();
-      // Send initial status request immediately
-      sendCommand("get_status");
     } catch (err) {
       addLog(`Connection failed: ${err.message}`, "error");
+      connected = false;
+      lastConnectionError = err?.message || String(err);
     }
   }
 
   async function disconnect() {
-    stopStatusPolling();
     try {
+      connected = false;
+      stopQueryPolling();
+      lastConnectionError = null;
+      pendingQ0 = 0;
+      pendingQ0StartedAt = 0;
       if (reader) {
+        await reader.cancel();
         reader.releaseLock();
         reader = null;
       }
@@ -60,9 +243,6 @@
         await port.close();
         port = null;
       }
-      connected = false;
-      status = null;
-      showConsole = true; // Show console again on disconnect
       addLog("Disconnected", "info");
     } catch (err) {
       addLog(`Disconnect error: ${err.message}`, "error");
@@ -71,26 +251,57 @@
 
   async function readLoop() {
     const decoder = new TextDecoder();
-    let buffer = "";
+    
     try {
       while (connected && reader) {
         const { value, done } = await reader.read();
         if (done) break;
-        if (!value) continue;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = lineProcessor.push(chunk);
+        for (const line of lines) {
+          // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
+          if (!showUpdates && pendingQ0 > 0) {
+            // expire a stuck pending Q0 so we don't swallow other traffic forever
+            if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > 5000) {
+              pendingQ0 = 0;
+              pendingQ0StartedAt = 0;
+            }
 
-        buffer += decoder.decode(value, { stream: true });
+            if (isDataLine(line) && looksLikeQ0Data(line)) {
+              pendingQ0 = 2;
 
-        let newlineIndex;
-        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-          const line = buffer.slice(0, newlineIndex).trim();
-          buffer = buffer.slice(newlineIndex + 1);
-          processIncomingLine(line);
+              // still parse telemetry even if we hide the line
+              const parsed = parseTelemetryLine(line);
+              if (parsed) {
+                telemetry = {
+                  ...telemetry,
+                  ...parsed,
+                  _receivedAt: new Date().toLocaleTimeString(),
+                };
+              }
+
+              upsertCollapsedQ0();
+              continue;
+            }
+            if (pendingQ0 === 2 && isOkLine(line)) {
+              pendingQ0 = 0;
+              pendingQ0StartedAt = 0;
+              upsertCollapsedQ0();
+              continue;
+            }
+          }
+
+          const parsed = parseTelemetryLine(line);
+          if (parsed) {
+            telemetry = {
+              ...telemetry,
+              ...parsed,
+              _receivedAt: new Date().toLocaleTimeString(),
+            };
+          }
+          addLog(`RX: ${line}`, "rx");
         }
-      }
-
-      buffer = buffer.trim();
-      if (buffer) {
-        processIncomingLine(buffer);
       }
     } catch (err) {
       if (connected) {
@@ -108,216 +319,195 @@
         timestamp: new Date().toLocaleTimeString(),
       },
     ];
-    if (logs.length > 100) {
-      logs = logs.slice(-100);
+    // Keep last 1000 logs
+    if (logs.length > 1000) {
+      logs = logs.slice(-1000);
     }
-    // Auto-scroll to bottom
-    setTimeout(() => {
-      if (consoleOutput) {
-        consoleOutput.scrollTop = consoleOutput.scrollHeight;
-      }
-    }, 0);
-  }
-
-  // Auto-scroll when logs change
-  $: if (logs.length > 0 && consoleOutput) {
-    setTimeout(() => {
-      consoleOutput.scrollTop = consoleOutput.scrollHeight;
-    }, 0);
   }
 
   function clearLogs() {
     logs = [];
   }
 
-  async function sendCommand(cmdType, cmdData = {}) {
+  async function sendManual() {
+    const cmd = (manualCommand ?? "").trim();
+    if (!cmd) return;
+    await sendTcode(cmd);
+    manualCommand = "";
+  }
+
+  async function setTemperature() {
     if (!connected || !writer) {
-      return false;
+      addLog("Not connected", "error");
+      return;
     }
 
-    const payload = {
-      type: cmdType,
-      data: cmdData,
-    };
+    const raw = parseFloat(temperature);
+    if (isNaN(raw)) {
+      addLog("Invalid temperature value", "error");
+      return;
+    }
 
     try {
-      const text = JSON.stringify(payload);
-      await writer.write(new TextEncoder().encode(text + "\n"));
-      addLog(`TX -> ${text}`, "tx");
-      return true;
+      const tempCToSend = showFahrenheit ? fToC(raw) : raw;
+      const command = buildTemperatureCommand(tempCToSend);
+      await sendTcode(command);
     } catch (err) {
       addLog(`Send error: ${err.message}`, "error");
-      return false;
     }
   }
 
-  function startStatusPolling() {
-    stopStatusPolling();
-    // Poll status every 10 seconds
-    statusInterval = setInterval(async () => {
-      await sendCommand("get_status");
-    }, 10000);
-    // Also send initial ping
-    sendCommand("ping");
-    // Then ping every 10 seconds
-    pingInterval = setInterval(async () => {
-      await sendCommand("ping");
-    }, 10000);
-  }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-  function stopStatusPolling() {
-    if (statusInterval) {
-      clearInterval(statusInterval);
-      statusInterval = null;
+  async function runQ1StartupQueries() {
+    // fire-and-forget; we don't need to block the connect flow
+    try {
+      await sendTcode("Q1 BUILD");
+      await sleep(2000);
+      await sendTcode("Q1 BUILDER");
+      await sleep(2000);
+      await sendTcode("Q1 BUILD_DATE");
+    } catch {
+      // ignore
     }
-    if (pingInterval) {
-      clearInterval(pingInterval);
-      pingInterval = null;
-    }
-  }
-
-  function processIncomingLine(line) {
-    if (!line) return;
-
-    const result = parseJsonLine(line);
-    if (!result.ok) {
-      addLog(`Invalid JSON: ${line}`, "error");
-      return;
-    }
-
-    const parsed = result.value;
-    const msgType = parsed?.type || "unknown";
-
-    addLog(`RX <- ${line}`, "rx");
-
-    // Handle reply messages
-    if (msgType === "reply") {
-      handleReply(parsed);
-      return;
-    }
-
-    addLog(`Unhandled message type '${msgType}'`, "info");
-  }
-
-  function handleReply(parsed) {
-    const replyData = parsed.data || {};
-    const success = replyData.success ?? false;
-
-    if (success && replyData.status !== undefined) {
-      // This is a status reply
-      const hadStatus = status !== null;
-      status = {
-        status: replyData.status || "unknown",
-        uptime_ms: replyData.uptime_ms ?? 0,
-        revision: replyData.revision || "unknown",
-        build_date: replyData.build_date || "0",
-      };
-      addLog("Status received", "success");
-      // Hide console once we first receive status
-      if (!hadStatus) {
-        showConsole = false;
-      }
-    } else if (success && replyData.message === "pong") {
-      // This is a ping reply
-      addLog("Pong received", "info");
-    } else {
-      addLog(`Reply: ${JSON.stringify(replyData)}`, "info");
-    }
-  }
-
-  function formatUptime(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ${hours % 24}h`;
-    if (hours > 0) return `${hours}h ${minutes % 60}m`;
-    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-    return `${seconds}s`;
-  }
-
-  function formatBuildDate(timestamp) {
-    if (!timestamp || timestamp === "0") return "Unknown";
-    const date = new Date(parseInt(timestamp) * 1000);
-    return date.toLocaleString();
   }
 </script>
 
-<main class="container">
-  <section class="content-block">
-    <h2>Controller Console</h2>
-    <p>Connect to your thermal chamber controller via serial port.</p>
+<div class="sender">
+  <div class="content">
+    <div class="top-row">
+      <div class="box connection">
+        <div class="box-title">Connection</div>
 
-    <div class="warning">
-      <strong>⚠️ Browser Compatibility:</strong> This tool works best in Chrome/Edge.
+        <div class="field">
+          <label>
+            Baud Rate
+            <select bind:value={baudRate} disabled={connected}>
+              {#each baudRates as rate}
+                <option value={rate}>{rate}</option>
+              {/each}
+            </select>
+          </label>
+        </div>
+
+        <div class="button-row">
+          {#if !connected}
+            <button on:click={connect}>Connect</button>
+          {:else}
+            <button on:click={disconnect}>Disconnect</button>
+          {/if}
+          <button on:click={clearLogs}>Clear Log</button>
+        </div>
+
+        <div class="toggles">
+          <label>
+            <input type="checkbox" bind:checked={showFahrenheit} />
+            Display °F
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={showKeepalives} />
+            Show keepalives (.)
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={showUpdates} />
+            Show updates (Q0 ...)
+          </label>
+
+          <div class="build-info">
+            <div>
+              Build:
+              <span class="build-version" class:dirty={buildIsDirty}>
+                {buildVersion ?? "(unknown)"}
+              </span>
+            </div>
+            <div>Builder: {builderName ?? "(unknown)"}</div>
+            <div>Build date: {buildDateText ?? "(unknown)"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="gauges">
+        <Gauge
+          label="Temperature"
+          unit={tempUi.unit}
+          min={tempUi.gaugeMin}
+          max={tempUi.gaugeMax}
+          value={tempUi.tempDisplay}
+          setpoint={tempUi.setTempDisplay}
+          setpointBand={tempUi.bandDisplay}
+          debugForceNeedles={debugForceGaugeNeedles}
+        >
+          <div class="gauge-controls">
+            <input
+              type="number"
+              bind:value={temperature}
+              placeholder={`Set (${tempUi.unit})`}
+              disabled={!connected}
+            />
+            <button on:click={setTemperature} disabled={!connected}>Set</button>
+          </div>
+        </Gauge>
+
+        <Gauge
+          label="Humidity"
+          unit="%"
+          min={0}
+          max={100}
+          value={telemetry?.RH}
+          setpoint={telemetry?.SET_RH}
+          setpointZone="under"
+          debugForceNeedles={debugForceGaugeNeedles}
+        />
+      </div>
+
+      <div class="box status-panel">
+        <StatusGrid
+          states={statusStates}
+          clickableKeys={["connection", "test"]}
+          onCellActivate={handleStatusActivate}
+        />
+      </div>
     </div>
 
-    <div class="serial-controls">
-      <div class="control-row">
-        <label for="baud">Baud Rate:</label>
-        <select id="baud" bind:value={baudRate} disabled={connected}>
-          <option value="9600">9600</option>
-          <option value="19200">19200</option>
-          <option value="38400">38400</option>
-          <option value="57600">57600</option>
-          <option value="115200">115200</option>
-        </select>
-      </div>
-
-      <div class="control-row">
-        <label>
-          <input type="checkbox" bind:checked={autoConnect} />
-          Auto-connect on page load
-        </label>
-      </div>
-
-      <div class="control-row">
-        {#if !connected}
-          <button class="nav-btn" on:click={connect}>Connect</button>
-        {:else}
-          <button class="nav-btn" on:click={disconnect}>Disconnect</button>
-        {/if}
-        <button class="nav-btn" on:click={clearLogs}>Clear Logs</button>
-        <button class="nav-btn" on:click={() => (showConsole = !showConsole)}>
-          {showConsole ? "Hide" : "Show"} Console
-        </button>
-      </div>
-
-      {#if status}
-        {@const statusClass = status.status.toLowerCase()}
-        {@const isDirty = status.revision.toUpperCase().includes("DIRTY")}
-        <div class="control-row">
-          <span class="status-info">
-            Status: <span class="status-value status-{statusClass}"
-              >{status.status}</span
-            >
-          </span>
-          <span>Uptime: {formatUptime(status.uptime_ms)}</span>
-        </div>
-        <div class="control-row">
-          <span class="status-info">
-            Revision: <span
-              class="status-value revision-{isDirty ? 'dirty' : 'clean'}"
-              >{status.revision}</span
-            >
-          </span>
-          <span>Build: {formatBuildDate(status.build_date)}</span>
-        </div>
-      {/if}
+    <div class="box graph">
+      <div class="box-title">Graph</div>
+      <div class="graph-placeholder">(JOE PUT A GRAPH HERE)</div>
     </div>
 
-    {#if showConsole}
-      <div class="console">
-        <div class="console-output" bind:this={consoleOutput}>
-          {#each logs as log}
-            <div class={`log-entry log-${log.type}`}>
-              <span class="log-time">[{log.timestamp}]</span>
-              <span class="log-message">{log.message}</span>
+    <div class="box terminal">
+      <div class="box-title">Terminal</div>
+      <div class="terminal-shell">
+        <div
+          class="terminal-scroll"
+          bind:this={terminalEl}
+          on:scroll={updateStickiness}
+        >
+          {#each displayLogs as log}
+            <div class="log-line">
+              <span class="ts">[{log.timestamp}]</span>
+              <span
+                class="msg"
+                style="color: {isKeepalive(log) ? '#666' : log.type === 'error' ? '#f00' : log.type === 'success' ? '#0f0' : log.type === 'rx' ? '#0ff' : '#fff'}"
+              >
+                {log.message}
+              </span>
             </div>
           {/each}
         </div>
+
+        <div class="terminal-input">
+          <input
+            class="manual"
+            placeholder="Type a command and press Enter (e.g. Q0*61)"
+            bind:value={manualCommand}
+            disabled={!connected}
+            on:keydown={(e) => {
+              if (e.key === "Enter") sendManual();
+            }}
+          />
+          <button on:click={sendManual} disabled={!connected || !manualCommand.trim()}>Send</button>
+        </div>
       </div>
-    {/if}
-  </section>
-</main>
+    </div>
+  </div>
+</div>
