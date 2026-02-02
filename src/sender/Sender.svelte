@@ -139,13 +139,40 @@
     };
   }
 
+  //------------------------------
+  // Status grid state derivations
+  //------------------------------
+  $: connectionState = lastConnectionError
+    ? "blink-red"
+    : connected
+      ? "green"
+      : "blink-yellow";
+  $: faultState = alarmValue !== 0 ? "blink-red" : "off";
+  $: heatState = asBool(telemetry?.HEAT) ? "blink-yellow" : "off";
+  $: coolState = asBool(telemetry?.COOL) ? "blink-yellow" : "off";
+  $: testState = TEST_MODE ? "blink-red" : "off";
+
+  // Optional door-safe gate: only applied if controller reports DOOR_SAFE boolean.
+  $: hasDoorSafe = typeof telemetry?.DOOR_SAFE === "boolean";
+  $: doorSafe = hasDoorSafe ? telemetry.DOOR_SAFE : null;
+  $: doorState = hasDoorSafe ? (doorSafe ? "green" : "blink-yellow") : "off";
+
+  // READY may ONLY be green when all gates are satisfied.
+  $: readyGreenAllowed =
+    connectionState === "green" &&
+    q1Complete &&
+    faultState === "off" &&
+    (!hasDoorSafe || doorSafe === true);
+  $: readyState = connected ? (readyGreenAllowed ? "green" : "blink-yellow") : "off";
+
   $: statusStates = {
-    connection: lastConnectionError ? "blink-red" : connected ? "green" : "blink-yellow",
-    heat: asBool(telemetry?.HEAT) ? "blink-yellow" : "off",
-    cool: asBool(telemetry?.COOL) ? "blink-yellow" : "off",
-    fault: alarmValue !== 0 ? "blink-red" : "off",
-    test: TEST_MODE ? "blink-red" : "off",
-    ready: connected ? (q1Complete ? "green" : "blink-yellow") : "off",
+    connection: connectionState,
+    fault: faultState,
+    ready: readyState,
+    heat: heatState,
+    cool: coolState,
+    test: testState,
+    door_safe: doorState,
   };
 
   async function handleStatusActivate(key) {
