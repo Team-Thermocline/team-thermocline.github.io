@@ -7,6 +7,7 @@
   import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
   import Gauge from "./Gauge.svelte";
   import StatusGrid from "./StatusGrid.svelte";
+  import Graph from "./Graph.svelte";
 
   let port = null;
   let reader = null;
@@ -30,6 +31,7 @@
   let q1BuildDone = false;
   let q1BuilderDone = false;
   let q1BuildDateDone = false;
+  let samples = []; // [{ t, tempC, setTempC, rh }]
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -137,6 +139,23 @@
       ...parsed,
       _receivedAt: new Date().toLocaleTimeString(),
     };
+
+    // Record time-series samples when Q0 telemetry arrives
+    if (Object.prototype.hasOwnProperty.call(parsed, "TEMP") || Object.prototype.hasOwnProperty.call(parsed, "RH")) {
+      const tempC = telemetry?.TEMP;
+      const setTempC = telemetry?.SET_TEMP;
+      const rh = telemetry?.RH;
+      if (typeof tempC === "number" && Number.isFinite(tempC) && typeof rh === "number" && Number.isFinite(rh)) {
+        const next = {
+          t: Date.now(),
+          tempC,
+          setTempC: typeof setTempC === "number" && Number.isFinite(setTempC) ? setTempC : null,
+          rh,
+        };
+        samples = [...samples, next];
+        if (samples.length > 50_000) samples = samples.slice(-50_000);
+      }
+    }
   }
 
   //------------------------------
@@ -468,6 +487,7 @@
         <Gauge
           label="Temperature"
           unit={tempUi.unit}
+          theme="temp"
           min={tempUi.gaugeMin}
           max={tempUi.gaugeMax}
           value={tempUi.tempDisplay}
@@ -489,6 +509,7 @@
         <Gauge
           label="Humidity"
           unit="%"
+          theme="rh"
           min={0}
           max={100}
           value={telemetry?.RH}
@@ -508,8 +529,7 @@
     </div>
 
     <div class="box graph">
-      <div class="box-title">Graph</div>
-      <div class="graph-placeholder">(JOE PUT A GRAPH HERE)</div>
+      <Graph samples={samples} showFahrenheit={showFahrenheit} />
     </div>
 
     <div class="box terminal">

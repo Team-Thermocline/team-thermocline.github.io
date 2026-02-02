@@ -1,6 +1,7 @@
 <script>
   export let label = "";
   export let unit = "";
+  export let theme = "temp"; // "temp" | "rh"
   export let min = 0;
   export let max = 100;
   export let value = null; // current
@@ -90,7 +91,7 @@
   $: setpointOuter = setpointAngle === null ? null : pointFor(setpointAngle, outerR);
 </script>
 
-<div class="gauge">
+<div class={`gauge theme-${theme}`}>
   <div class="title">{label}</div>
   <svg viewBox="0 0 200 140" class="svg" aria-label={label}>
     <!-- track -->
@@ -127,11 +128,11 @@
   </svg>
 
   <div class="numbers">
-    <div class="row">
+    <div class="row cur">
       <span class="k">cur</span>
       <span class="v">{v === null ? "--" : v}{unit}</span>
     </div>
-    <div class="row">
+    <div class="row set">
       <span class="k">set</span>
       <span class="v">{sp === null ? "--" : sp}{unit}</span>
     </div>
@@ -187,7 +188,7 @@
     stroke-linecap: round;
   }
   .needle.value {
-    stroke: #00ffff;
+    stroke: var(--needle-color);
     stroke-width: 4;
   }
   .hub {
@@ -211,9 +212,27 @@
     min-width: 90px;
     text-align: right;
   }
+  .row.cur .v {
+    color: var(--cur-color);
+  }
+  .row.set .v {
+    color: var(--set-color);
+  }
   .controls {
     margin-top: 8px;
     margin-top: auto;
+  }
+
+  .gauge {
+    --cur-color: var(--blue-500);
+    --set-color: var(--cyan-500);
+    --needle-color: var(--cur-color);
+  }
+
+  .gauge.theme-rh {
+    --cur-color: var(--red-600);
+    --set-color: var(--cyan-500);
+    --needle-color: var(--cur-color);
   }
 </style>
 
