@@ -276,7 +276,7 @@
       });
 
       // Just one tiny line! rp2040 default usb impl. RELIES on this.
-      await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+      await port.setSignals({ dataTerminalReady: true });
 
       reader = port.readable.getReader();
       writer = port.writable.getWriter();
@@ -417,15 +417,16 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function runQ1StartupQueries() {
-    // fire-and-forget; we don't need to block the connect flow
+    // Run these at startup
     try {
+      await sleep(5000);
       await sendTcode("Q1 BUILD");
-      await sleep(2000);
+      await sleep(500);
       await sendTcode("Q1 BUILDER");
-      await sleep(2000);
+      await sleep(500);
       await sendTcode("Q1 BUILD_DATE");
     } catch {
-      // ignore
+      addLog("Q1 startup queries failed", "error");
     }
   }
 </script>
