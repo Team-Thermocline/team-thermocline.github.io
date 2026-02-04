@@ -90,12 +90,25 @@ select:disabled {
 .build-info {
   margin-top: 8px;
   display: grid;
-  gap: 4px;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  align-items: baseline;
+  font-size: 0.9rem;
+}
+
+.build-info-label {
+  color: #888;
+}
+
+.build-info-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .build-version.dirty {
   color: #ff3b30;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .gauges {

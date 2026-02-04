@@ -3,16 +3,15 @@
   import "./Sender.css";
   import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
+  import { createSerialConnection } from "./serial.js";
   import { fToC, getTempUiModel } from "./temp.js";
   import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
   import Gauge from "./Gauge.svelte";
   import StatusGrid from "./StatusGrid.svelte";
   import Graph from "./Graph.svelte";
+  import { computeStatusStates } from "./statusGridState.js";
 
-  let port = null;
-  let reader = null;
-  let writer = null;
-  let connected = false;
+  let serial = createSerialConnection();
   let baudRate = 115200;
   let logs = [];
   let temperature = "";
@@ -23,10 +22,12 @@
   let telemetry = null;
   let manualCommand = "";
 
+  // UI and Terminal state vars
   let terminalEl = null;
   let stickToBottom = true;
   let showFahrenheit = false;
   let lastConnectionError = null;
+  let hasReceivedGoodRx = false;
   let TEST_MODE = false;
   let q1BuildDone = false;
   let q1BuilderDone = false;
@@ -112,11 +113,6 @@
 
   $: displayLogs = buildDisplayLogs(logs);
 
-  const asBool = (v) => v === true;
-  const asNumber = (v) => (typeof v === "number" ? v : Number(v));
-
-  $: alarmValue = telemetry?.ALARM == null ? 0 : asNumber(telemetry.ALARM);
-
   $: buildVersion = telemetry?.BUILD ?? null;
   $: builderName = telemetry?.BUILDER ?? null;
   $: buildDateSec = telemetry?.BUILD_DATE ?? null;
@@ -158,45 +154,20 @@
     }
   }
 
-  //------------------------------
-  // Status grid state derivations
-  //------------------------------
-  $: connectionState = lastConnectionError
-    ? "blink-red"
-    : connected
-      ? "green"
-      : "blink-yellow";
-  $: faultState = alarmValue !== 0 ? "blink-red" : "off";
-  $: heatState = asBool(telemetry?.HEAT) ? "blink-yellow" : "off";
-  $: coolState = asBool(telemetry?.COOL) ? "blink-yellow" : "off";
-  $: testState = TEST_MODE ? "blink-red" : "off";
-
-  // Optional door-safe gate: only applied if controller reports DOOR_SAFE boolean.
-  $: hasDoorSafe = typeof telemetry?.DOOR_SAFE === "boolean";
-  $: doorSafe = hasDoorSafe ? telemetry.DOOR_SAFE : null;
-  $: doorState = hasDoorSafe ? (doorSafe ? "green" : "blink-yellow") : "off";
-
-  // READY may ONLY be green when all gates are satisfied.
-  $: readyGreenAllowed =
-    connectionState === "green" &&
-    q1Complete &&
-    faultState === "off" &&
-    (!hasDoorSafe || doorSafe === true);
-  $: readyState = connected ? (readyGreenAllowed ? "green" : "blink-yellow") : "off";
-
-  $: statusStates = {
-    connection: connectionState,
-    fault: faultState,
-    ready: readyState,
-    heat: heatState,
-    cool: coolState,
-    test: testState,
-    door_safe: doorState,
-  };
+  $: statusStates = computeStatusStates({
+    serialConnected: serial.connected,
+    hasReceivedGoodRx,
+    lastConnectionError,
+    telemetry,
+    testMode: TEST_MODE,
+    q1BuildDone,
+    q1BuilderDone,
+    q1BuildDateDone,
+  });
 
   async function handleStatusActivate(key) {
     if (key === "connection") {
-      if (connected) await disconnect();
+      if (serial.connected) await disconnect();
       else await connect();
       return;
     }
@@ -232,16 +203,20 @@
   }
 
   async function sendTcode(command) {
-    if (!connected || !writer) return;
+    if (!serial.connected) return;
     try {
       if (isQ0Command(command)) {
         pendingQ0 = 1;
         pendingQ0StartedAt = Date.now();
       }
 
-      await writer.write(new TextEncoder().encode(command + "\n"));
+      const sent = await serial.write(command);
+      if (!sent) {
+        addLog(`Send error: failed to write`, "error");
+        return;
+      }
+
       if (!showUpdates && isQ0Command(command)) {
-        // Printer-style terminal: collapse Q0 chatter into one line.
         upsertCollapsedQ0();
       } else {
         addLog(`TX: ${command}`, "tx");
@@ -255,116 +230,67 @@
   }
 
   async function connect() {
-    try {
-      if (!navigator.serial) {
-        addLog("Web Serial API not supported. Use Chrome/Edge.", "error");
-        return;
-      }
+    lastConnectionError = null;
+    hasReceivedGoodRx = false;
+    q1BuildDone = false;
+    q1BuilderDone = false;
+    q1BuildDateDone = false;
+    addLog("Requesting serial port...", "info");
 
-      lastConnectionError = null;
-      q1BuildDone = false;
-      q1BuilderDone = false;
-      q1BuildDateDone = false;
-      addLog("Requesting serial port...", "info");
-      port = await navigator.serial.requestPort();
-      await port.open({ 
-        baudRate: baudRate,
-        dataBits: 8,
-        stopBits: 1,
-        parity: "none",
-        flowControl: "none"
-      });
+    const success = await serial.connect(baudRate, handleSerialData, (err) => {
+      addLog(`Connection error: ${err}`, "error");
+      lastConnectionError = err;
+    });
 
-      // Just one tiny line! rp2040 default usb impl. RELIES on this.
-      await port.setSignals({ dataTerminalReady: true });
-
-      reader = port.readable.getReader();
-      writer = port.writable.getWriter();
-      connected = true;
+    if (success) {
       lineProcessor.reset();
-
       addLog(`Connected at ${baudRate} baud`, "success");
       startQueryPolling();
       runQ1StartupQueries();
-      readLoop();
-    } catch (err) {
-      addLog(`Connection failed: ${err.message}`, "error");
-      connected = false;
-      lastConnectionError = err?.message || String(err);
+    } else {
+      addLog("Connection failed", "error");
+    }
+  }
+
+  function handleSerialData(text, rawBytes) {
+    const lines = lineProcessor.push(text, rawBytes);
+    for (const line of lines) {
+      // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
+      if (!showUpdates && pendingQ0 > 0) {
+        // expire a stuck pending Q0 so we don't swallow other traffic forever
+        if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > 5000) {
+          pendingQ0 = 0;
+          pendingQ0StartedAt = 0;
+        }
+
+        if (isDataLine(line) && looksLikeQ0Data(line)) {
+          pendingQ0 = 2;
+          applyParsedTelemetry(parseTelemetryLine(line));
+          upsertCollapsedQ0();
+          continue;
+        }
+        if (pendingQ0 === 2 && isOkLine(line)) {
+          pendingQ0 = 0;
+          pendingQ0StartedAt = 0;
+          upsertCollapsedQ0();
+          continue;
+        }
+      }
+
+      applyParsedTelemetry(parseTelemetryLine(line));
+      hasReceivedGoodRx = true;
+      addLog(`RX: ${line}`, "rx");
     }
   }
 
   async function disconnect() {
-    try {
-      connected = false;
-      stopQueryPolling();
-      lastConnectionError = null;
-      pendingQ0 = 0;
-      pendingQ0StartedAt = 0;
-      if (reader) {
-        await reader.cancel();
-        reader.releaseLock();
-        reader = null;
-      }
-      if (writer) {
-        writer.releaseLock();
-        writer = null;
-      }
-      if (port) {
-        await port.close();
-        port = null;
-      }
-      addLog("Disconnected", "info");
-    } catch (err) {
-      addLog(`Disconnect error: ${err.message}`, "error");
-    }
-  }
-
-  async function readLoop() {
-    const decoder = new TextDecoder();
-    
-    try {
-      while (connected && reader) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = lineProcessor.push(chunk);
-        for (const line of lines) {
-          // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
-          if (!showUpdates && pendingQ0 > 0) {
-            // expire a stuck pending Q0 so we don't swallow other traffic forever
-            if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > 5000) {
-              pendingQ0 = 0;
-              pendingQ0StartedAt = 0;
-            }
-
-            if (isDataLine(line) && looksLikeQ0Data(line)) {
-              pendingQ0 = 2;
-
-              // still parse telemetry even if we hide the line
-              applyParsedTelemetry(parseTelemetryLine(line));
-
-              upsertCollapsedQ0();
-              continue;
-            }
-            if (pendingQ0 === 2 && isOkLine(line)) {
-              pendingQ0 = 0;
-              pendingQ0StartedAt = 0;
-              upsertCollapsedQ0();
-              continue;
-            }
-          }
-
-          applyParsedTelemetry(parseTelemetryLine(line));
-          addLog(`RX: ${line}`, "rx");
-        }
-      }
-    } catch (err) {
-      if (connected) {
-        addLog(`Read error: ${err.message}`, "error");
-      }
-    }
+    stopQueryPolling();
+    lastConnectionError = null;
+    hasReceivedGoodRx = false;
+    pendingQ0 = 0;
+    pendingQ0StartedAt = 0;
+    await serial.disconnect();
+    addLog("Disconnected", "info");
   }
 
   function addLog(message, type = "info") {
@@ -394,7 +320,7 @@
   }
 
   async function setTemperature() {
-    if (!connected || !writer) {
+    if (!serial.connected) {
       addLog("Not connected", "error");
       return;
     }
@@ -440,7 +366,7 @@
         <div class="field">
           <label>
             Baud Rate
-            <select bind:value={baudRate} disabled={connected}>
+            <select bind:value={baudRate} disabled={serial.connected}>
               {#each baudRates as rate}
                 <option value={rate}>{rate}</option>
               {/each}
@@ -449,7 +375,7 @@
         </div>
 
         <div class="button-row">
-          {#if !connected}
+          {#if !serial.connected}
             <button on:click={connect}>Connect</button>
           {:else}
             <button on:click={disconnect}>Disconnect</button>
@@ -472,14 +398,25 @@
           </label>
 
           <div class="build-info">
-            <div>
-              Build:
-              <span class="build-version" class:dirty={buildIsDirty}>
-                {buildVersion ?? "(unknown)"}
-              </span>
-            </div>
-            <div>Builder: {builderName ?? "(unknown)"}</div>
-            <div>Build date: {buildDateText ?? "(unknown)"}</div>
+            <span class="build-info-label">Build</span>
+            <span class="build-info-value build-version" class:dirty={buildIsDirty}>
+              {#if buildVersion}
+                <a
+                  href={"https://github.com/Team-Thermocline/T-Code/commit/" + buildVersion}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style="color:inherit;text-decoration:underline;"
+                >
+                  {buildVersion}
+                </a>
+              {:else}
+                —
+              {/if}
+            </span>
+            <span class="build-info-label">Builder</span>
+            <span class="build-info-value">{builderName ?? "—"}</span>
+            <span class="build-info-label">Build date</span>
+            <span class="build-info-value">{buildDateText ?? "—"}</span>
           </div>
         </div>
       </div>
@@ -501,9 +438,9 @@
               type="number"
               bind:value={temperature}
               placeholder={`Set (${tempUi.unit})`}
-              disabled={!connected}
+              disabled={!serial.connected}
             />
-            <button on:click={setTemperature} disabled={!connected}>Set</button>
+            <button on:click={setTemperature} disabled={!serial.connected}>Set</button>
           </div>
         </Gauge>
 
@@ -559,12 +496,12 @@
             class="manual"
             placeholder="Type a command and press Enter (e.g. Q0*61)"
             bind:value={manualCommand}
-            disabled={!connected}
+            disabled={!serial.connected}
             on:keydown={(e) => {
               if (e.key === "Enter") sendManual();
             }}
           />
-          <button on:click={sendManual} disabled={!connected || !manualCommand.trim()}>Send</button>
+          <button on:click={sendManual} disabled={!serial.connected || !manualCommand.trim()}>Send</button>
         </div>
       </div>
     </div>

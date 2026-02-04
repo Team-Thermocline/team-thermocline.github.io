@@ -9,13 +9,29 @@ export function createLineProcessor() {
     /**
      * Push a decoded text chunk, return completed "lines".
      * Also handles keepalive '.' without a trailing newline.
+     * Always returns lines even if garbled - converts non-printable chars to hex.
      * @param {string} chunk
+     * @param {Uint8Array} rawBytes - Optional raw bytes for fallback display
      * @returns {string[]}
      */
-    push(chunk) {
+    push(chunk, rawBytes = null) {
+      if (!chunk && !rawBytes) return [];
+      
+      // If chunk is empty but we have raw bytes, show hex representation
+      if (!chunk && rawBytes && rawBytes.length > 0) {
+        const hex = Array.from(rawBytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        return [`[garbled: ${hex}]`];
+      }
+
       if (!chunk) return [];
 
-      buffer += chunk;
+      // Normalize garbled characters - replace non-printable with hex
+      const normalized = chunk.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, (c) => {
+        const code = c.charCodeAt(0);
+        return `\\x${code.toString(16).padStart(2, '0')}`;
+      });
+
+      buffer += normalized;
 
       // Split on newline(s) and emit all complete lines.
       const parts = buffer.split(/\r?\n/);
