@@ -164,6 +164,7 @@
     q1BuilderDone,
     q1BuildDateDone,
   });
+  $: readyGreen = statusStates?.ready === "green";
 
   async function handleStatusActivate(key) {
     if (key === "connection") {
@@ -320,8 +321,8 @@
   }
 
   async function setTemperature() {
-    if (!serial.connected) {
-      addLog("Not connected", "error");
+    if (!readyGreen) {
+      addLog("Not ready", "error");
       return;
     }
 
@@ -438,9 +439,12 @@
               type="number"
               bind:value={temperature}
               placeholder={`Set (${tempUi.unit})`}
-              disabled={!serial.connected}
+              disabled={!readyGreen}
+              on:keydown={(e) => {
+                if (e.key === "Enter") setTemperature();
+              }}
             />
-            <button on:click={setTemperature} disabled={!serial.connected}>Set</button>
+            <button on:click={setTemperature} disabled={!readyGreen}>Set</button>
           </div>
         </Gauge>
 
@@ -496,12 +500,12 @@
             class="manual"
             placeholder="Type a command and press Enter (e.g. Q0*61)"
             bind:value={manualCommand}
-            disabled={!serial.connected}
+            disabled={!readyGreen}
             on:keydown={(e) => {
               if (e.key === "Enter") sendManual();
             }}
           />
-          <button on:click={sendManual} disabled={!serial.connected || !manualCommand.trim()}>Send</button>
+          <button on:click={sendManual} disabled={!readyGreen}>Send</button>
         </div>
       </div>
     </div>
