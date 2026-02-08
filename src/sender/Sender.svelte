@@ -125,6 +125,9 @@
   $: buildIsDirty = typeof buildVersion === "string" && buildVersion.includes("-dirty");
   $: q1Complete = q1BuildDone && q1BuilderDone && q1BuildDateDone;
 
+  // For debug table polling
+  let lastPolledByKey = {};
+
   function applyParsedTelemetry(parsed) {
     if (!parsed) return;
 
@@ -132,10 +135,14 @@
     if (Object.prototype.hasOwnProperty.call(parsed, "BUILDER")) q1BuilderDone = true;
     if (Object.prototype.hasOwnProperty.call(parsed, "BUILD_DATE")) q1BuildDateDone = true;
 
+    // Update last polled by key
+    const now = Date.now();
+    const updates = Object.fromEntries(Object.keys(parsed).map((k) => [k, now]));
+    lastPolledByKey = { ...lastPolledByKey, ...updates };
+
     telemetry = {
       ...telemetry,
       ...parsed,
-      _receivedAt: new Date().toLocaleTimeString(),
     };
 
     // Record time-series samples when Q0 telemetry arrives
@@ -468,7 +475,7 @@
     </div>
 
     <div class="box graph">
-      <Graph samples={samples} showFahrenheit={showFahrenheit} />
+      <Graph samples={samples} showFahrenheit={showFahrenheit} telemetry={telemetry} lastPolledByKey={lastPolledByKey} sendTcode={sendTcode} />
     </div>
 
     <div class="box terminal">

@@ -3,9 +3,36 @@
   import "uplot/dist/uPlot.min.css";
   import { onDestroy, onMount } from "svelte";
   import { cToF } from "./temp.js";
+  import { getDebugRows, createDebugPoller } from "./DebugTable.js";
 
   export let samples = []; // [{ t: number(ms), tempC: number, setTempC: number|null, rh: number }]
   export let showFahrenheit = false;
+  export let telemetry = null;
+  export let lastPolledByKey = {};
+  export let sendTcode = null;
+
+  let showDebugPopup = false;
+  let debugPopupWasOpen = false;
+  const debugPoller = createDebugPoller();
+  $: if (showDebugPopup !== debugPopupWasOpen) {
+    debugPopupWasOpen = showDebugPopup;
+    if (showDebugPopup && sendTcode) debugPoller.start(sendTcode);
+    else debugPoller.stop();
+  }
+  $: debugRows = getDebugRows(telemetry, lastPolledByKey);
+
+  function escapeClose(node, closeFn) {
+    if (typeof closeFn !== "function") return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closeFn();
+    };
+    document.addEventListener("keydown", onKey);
+    return {
+      destroy() {
+        document.removeEventListener("keydown", onKey);
+      },
+    };
+  }
 
   const isFiniteNum = (n) => typeof n === "number" && Number.isFinite(n);
 
@@ -165,8 +192,45 @@
     <button type="button" on:click={downloadCsv}>Export CSV</button>
     <div class="graph-meta">
       span: {getSpanText()}
+      <button type="button" class="debug-btn" on:click={() => (showDebugPopup = true)}>Show Debug Values</button>
     </div>
   </div>
+
+  <!-- Debug popup! Kinda like the popup modal for updates -->
+  {#if showDebugPopup}
+    <div
+      class="debug-overlay"
+      role="dialog"
+      aria-modal="true"
+      use:escapeClose={() => (showDebugPopup = false)}>
+      <button
+        type="button"
+        class="debug-backdrop"
+        aria-label="Close"
+        on:click={() => (showDebugPopup = false)}></button>
+      <div class="debug-modal">
+        <div class="debug-modal-header">
+          <h3>Debug Values</h3>
+          <button type="button" on:click={() => (showDebugPopup = false)}>Close</button>
+        </div>
+        <table class="debug-table">
+          <thead>
+            <tr><th>Label</th><th>Value</th><th>Poll interval</th><th>Last polled</th></tr>
+          </thead>
+          <tbody>
+            {#each debugRows as row (row.key)}
+              <tr>
+                <td>{row.label}</td>
+                <td>{row.value}</td>
+                <td>{row.pollInterval}</td>
+                <td>{row.lastPolled}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {/if}
 
   <div class="plot-wrap" bind:this={rootEl}>
     <div class="plot" bind:this={plotEl}></div>
@@ -185,9 +249,67 @@
     align-items: center;
   }
   .graph-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     opacity: 0.75;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+  }
+  .debug-btn {
+    margin-left: 8px;
+  }
+  .debug-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .debug-backdrop {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: default;
+  }
+  .debug-modal {
+    position: relative;
+    background: #1c1c1c;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    padding: 16px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: auto;
+  }
+  .debug-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .debug-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .debug-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .debug-table th,
+  .debug-table td {
+    text-align: left;
+    padding: 6px 12px;
+    border-bottom: 1px solid #2b2b2b;
+  }
+  .debug-table th {
+    color: #888;
+    font-weight: 600;
   }
   .plot-wrap {
     width: 100%;

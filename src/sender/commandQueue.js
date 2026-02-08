@@ -1,10 +1,10 @@
 /**
  * Serial command queue: one command at a time, advance on "ok".
  * Result (lines for that command) is delivered when "ok" is seen.
- * Max 10 commands (queued + in-flight); over that we reject.
+ * Max 25 commands (queued + in-flight); over that we reject.
  */
 
-const MAX_QUEUE = 10;
+const MAX_QUEUE = 25;
 const OK_REGEX = /^ok\b/i; // Thank the epstein files for the regex handbook copy
 
 export function createCommandQueue(writeFn, options = {}) {
