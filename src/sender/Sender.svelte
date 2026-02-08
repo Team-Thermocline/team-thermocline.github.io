@@ -10,6 +10,7 @@
   import StatusGrid from "./StatusGrid.svelte";
   import Graph from "./Graph.svelte";
   import { computeStatusStates } from "./statusGridState.js";
+  import { createCommandQueue } from "./commandQueue.js";
 
   let serial = createSerialConnection();
   let baudRate = 115200;
@@ -19,6 +20,7 @@
   let showUpdates = false;
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
+  let commandQueue = null;
   let telemetry = null;
   let manualCommand = "";
 
@@ -204,29 +206,14 @@
   }
 
   async function sendTcode(command) {
-    if (!serial.connected) return;
+    if (!serial.connected || !commandQueue) return;
     try {
-      if (isQ0Command(command)) {
-        pendingQ0 = 1;
-        pendingQ0StartedAt = Date.now();
-      }
-
-      const sent = await serial.write(command);
-      if (!sent) {
-        addLog(`Send error: failed to write`, "error");
-        return;
-      }
-
-      if (!showUpdates && isQ0Command(command)) {
-        upsertCollapsedQ0();
-      } else {
-        addLog(`TX: ${command}`, "tx");
-      }
+      await commandQueue.send(command);
     } catch (err) {
       if ((err?.message || "").toLowerCase().includes("device has been lost")) {
         lastConnectionError = err?.message || String(err);
       }
-      addLog(`Send error: ${err.message}`, "error");
+      addLog(err?.message ?? "Send error", "error");
     }
   }
 
@@ -245,6 +232,19 @@
 
     if (success) {
       lineProcessor.reset();
+      commandQueue = createCommandQueue(
+        (cmd) => serial.write(cmd),
+        {
+          onSend(cmd) {
+            if (isQ0Command(cmd)) {
+              pendingQ0 = 1;
+              pendingQ0StartedAt = Date.now();
+            }
+            if (!showUpdates && isQ0Command(cmd)) upsertCollapsedQ0();
+            else addLog(`TX: ${cmd}`, "tx");
+          },
+        }
+      );
       addLog(`Connected at ${baudRate} baud`, "success");
       startQueryPolling();
       runQ1StartupQueries();
@@ -256,6 +256,8 @@
   function handleSerialData(text, rawBytes) {
     const lines = lineProcessor.push(text, rawBytes);
     for (const line of lines) {
+      commandQueue?.onLine(line);
+
       // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
       if (!showUpdates && pendingQ0 > 0) {
         // expire a stuck pending Q0 so we don't swallow other traffic forever
@@ -286,6 +288,7 @@
 
   async function disconnect() {
     stopQueryPolling();
+    commandQueue = null;
     lastConnectionError = null;
     hasReceivedGoodRx = false;
     pendingQ0 = 0;
@@ -341,16 +344,10 @@
     }
   }
 
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
   async function runQ1StartupQueries() {
-    // Run these at startup
     try {
-      await sleep(5000);
       await sendTcode("Q1 BUILD");
-      await sleep(500);
       await sendTcode("Q1 BUILDER");
-      await sleep(500);
       await sendTcode("Q1 BUILD_DATE");
     } catch {
       addLog("Q1 startup queries failed", "error");
