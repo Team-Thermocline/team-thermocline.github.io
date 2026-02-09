@@ -11,7 +11,7 @@ export const STATUS_CELLS = [
   { key: "compressor_fault", label: "CMPR. FAULT" },
   { key: "overcurrent_fault", label: "OVERC. FAULT" },
 
-  { key: "door_safe", label: "DOOR" },
+  { key: "door", label: "DOOR" },
   { key: "hot_exhaust", label: "EXHAUST" },
   { key: "test", label: "TEST" },
 ];

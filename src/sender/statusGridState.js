@@ -60,8 +60,15 @@ export function testState(inputs) {
   return inputs.testMode ? "blink-red" : "off";
 }
 
-/** DOOR: green when DOOR_SAFE true, yellow when false; off if controller doesn't report DOOR_SAFE. */
+/** DOOR: green when DOOR true, yellow when false; off if controller doesn't report DOOR. */
 export function doorState(inputs) {
+  const { hasDoor, door } = inputs;
+  if (!hasDoor) return "off";
+  return door ? "green" : "blink-yellow";
+}
+
+/** DOOR_SAFE: green when DOOR_SAFE true, yellow when false; off if controller doesn't report DOOR_SAFE. */
+export function doorSafeState(inputs) {
   const { hasDoorSafe, doorSafe } = inputs;
   if (!hasDoorSafe) return "off";
   return doorSafe ? "green" : "blink-yellow";
@@ -83,6 +90,8 @@ export function doorState(inputs) {
 export function computeStatusStates(inputs) {
   const alarmValue =
     inputs.telemetry?.ALARM == null ? 0 : asNumber(inputs.telemetry.ALARM);
+  const hasDoor = typeof inputs.telemetry?.DOOR === "boolean";
+  const door = hasDoor ? inputs.telemetry.DOOR : null;
   const hasDoorSafe = typeof inputs.telemetry?.DOOR_SAFE === "boolean";
   const doorSafe = hasDoorSafe ? inputs.telemetry.DOOR_SAFE : null;
   const q1Complete =
@@ -105,6 +114,7 @@ export function computeStatusStates(inputs) {
     heat: heatState(inputs),
     cool: coolState(inputs),
     test: testState(inputs),
-    door_safe: doorState({ ...inputs, hasDoorSafe, doorSafe }),
+    door: doorState({ ...inputs, hasDoor, door }),
+    door_safe: doorSafeState({ ...inputs, hasDoorSafe, doorSafe }),
   };
 }
