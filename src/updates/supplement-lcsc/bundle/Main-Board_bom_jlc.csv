@@ -1,0 +1,5 @@
+Quantity,LCSC Part #,Description,Designator,Footprint
+40,C142797,Fuse,"F101,F501,F701,F801,F901",Fuseholder_Littelfuse_100_series_5x20mm
+25,C163037,"Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)",J113,JST_XH_S4B-XH-A_1x04_P2.50mm_Horizontal
+100,C107700,"Resistor, small symbol","R201,R301,R401,R601",R_0805_2012Metric
+10,C42463210,"Shunt Regulator, SOT-23","U202,U302,U402,U602",SOT-23

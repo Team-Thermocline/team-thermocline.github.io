@@ -22,7 +22,7 @@
   const allUpcomingEvents = [
     { timestamp: dateToTimestamp('2025-12-10'), label: 'CDR Presentation' },
     { timestamp: dateToTimestamp('2026-01-20'), label: 'I&T Flows, Verification Matrix' },
-    { timestamp: dateToTimestamp('2026-02-03'), label: 'Interim Report' },
+    { timestamp: dateToTimestamp('2026-02-13'), label: 'Interim Report' },
     { timestamp: dateToTimestamp('2026-02-10'), label: 'Subsystem Operation' },
     { timestamp: dateToTimestamp('2026-02-24'), label: 'TRR Presentations' },
     { timestamp: dateToTimestamp('2026-03-17'), label: 'Functional Demo' },
