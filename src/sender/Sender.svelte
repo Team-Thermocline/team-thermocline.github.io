@@ -20,6 +20,7 @@
   let showUpdates = false;
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
+  let queryIntervalMs = 1000; // Time between Q0 queries in milliseconds
   let commandQueue = null;
   let telemetry = null;
   let manualCommand = "";
@@ -215,10 +216,16 @@
 
   function startQueryPolling() {
     stopQueryPolling();
-    // send every 1 seconds
+    const ms = Math.max(100, Math.min(60000, Number(queryIntervalMs) || 1000));
     queryInterval = setInterval(() => {
       sendTcode(buildQueryCommand());
-    }, 1000); // TODO: Could make this configurable
+    }, ms);
+  }
+
+  function setQueryIntervalMs(ms) {
+    const val = Math.max(100, Math.min(60000, Math.round(Number(ms)) || 1000));
+    queryIntervalMs = val;
+    if (serial.connected) startQueryPolling();
   }
 
   function stopQueryPolling() {
@@ -491,7 +498,15 @@
     </div>
 
     <div class="box graph">
-      <Graph samples={samples} showFahrenheit={showFahrenheit} telemetry={telemetry} lastPolledByKey={lastPolledByKey} sendTcode={sendTcode} />
+      <Graph
+        samples={samples}
+        showFahrenheit={showFahrenheit}
+        telemetry={telemetry}
+        lastPolledByKey={lastPolledByKey}
+        sendTcode={sendTcode}
+        queryIntervalMs={queryIntervalMs}
+        setQueryIntervalMs={setQueryIntervalMs}
+      />
     </div>
 
     <div class="box terminal">

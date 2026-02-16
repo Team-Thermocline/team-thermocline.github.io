@@ -10,6 +10,8 @@
   export let telemetry = null;
   export let lastPolledByKey = {};
   export let sendTcode = null;
+  export let queryIntervalMs = 1000;
+  export let setQueryIntervalMs = () => {};
 
   let showDebugPopup = false;
   let debugPopupWasOpen = false;
@@ -39,15 +41,6 @@
   let rootEl;
   let plotEl;
   let u = null;
-
-  const formatRel = (ms) => {
-    const s = Math.max(0, Math.round(ms / 1000));
-    const hh = Math.floor(s / 3600);
-    const mm = Math.floor((s % 3600) / 60);
-    const ss = s % 60;
-    if (hh > 0) return `${hh}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
-    return `${mm}:${String(ss).padStart(2, "0")}`;
-  };
 
   // CSV export --joe
   function downloadCsv() {
@@ -93,13 +86,6 @@
       rh.push(s.rh);
     }
     return [x, temp, setTemp, rh];
-  };
-
-  const getSpanText = () => {
-    if (!samples.length) return "0:00";
-    const t0 = samples[0]?.t ?? Date.now();
-    const t1 = samples[samples.length - 1]?.t ?? t0;
-    return formatRel(t1 - t0);
   };
 
   const resize = () => {
@@ -191,7 +177,18 @@
   <div class="graph-toolbar">
     <button type="button" on:click={downloadCsv}>Export CSV</button>
     <div class="graph-meta">
-      span: {getSpanText()}
+      <label class="update-speed-label">
+        Update (ms)
+        <input
+          type="number"
+          class="update-speed-input"
+          min="100"
+          max="60000"
+          step="50"
+          value={queryIntervalMs}
+          on:input={(e) => setQueryIntervalMs(e.target.value)}
+        />
+      </label>
       <button type="button" class="debug-btn" on:click={() => (showDebugPopup = true)}>Show Debug Values</button>
     </div>
   </div>
@@ -255,6 +252,26 @@
     opacity: 0.75;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+  }
+  .update-speed-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #888;
+  }
+  .update-speed-input {
+    width: 10ch;
+    padding: 4px 6px;
+    background: #2a2a2a;
+    color: #aaa;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .update-speed-input:focus {
+    outline: none;
+    border-color: #555;
   }
   .debug-btn {
     margin-left: 8px;
