@@ -70,6 +70,8 @@ function parseTelemetryValue(key, rawValue) {
 /**
  * Parse a telemetry line like:
  * "data: TEMP=0.0 RH=0.0 HEAT=false STATE=IDLE SET_TEMP=0.0 SET_RH=0.0 ALARM=0"
+ * 
+ * Then you can retreive the value like telemetry.TEMP or telemetry.STATE etc.
  *
  * @param {string} line
  * @returns {Record<string, any> | null}

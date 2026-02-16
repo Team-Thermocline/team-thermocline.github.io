@@ -16,6 +16,10 @@ const DEBUG_KEYS = [
   { key: "TDR1_TEMPERATURE_C", label: "TC2 Temperature (°C)", pollInterval: 5000 },
   { key: "TDR2_TEMPERATURE_C", label: "TC3 Temperature (°C)", pollInterval: 5000 },
   { key: "TDR3_TEMPERATURE_C", label: "TC4 Temperature (°C)", pollInterval: 5000 },
+  { key: "STATE", label: "State", pollInterval: 10000 },
+  { key: "FAULT", label: "Fault", pollInterval: 5000 },
+  { key: "COMPRESSOR_ON_TIME", label: "Compressor On Time", pollInterval: 10000 },
+  { key: "COMPRESSOR_OFF_TIME", label: "Compressor Off Time", pollInterval: 10000 },
 ];
 
 function formatValue(key, raw) {

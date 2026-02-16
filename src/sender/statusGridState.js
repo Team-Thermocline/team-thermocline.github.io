@@ -26,7 +26,12 @@ export function faultState(inputs) {
   return alarmValue !== 0 ? "blink-red" : "off";
 }
 
-/** READY: green only when CONN green, Build/Builder/Build Date received, no fault, and door safe (if reported). Off when disconnected. */
+/* Ready, Its a lot of conditions!
+ * solid green when STATE=standby
+ * flashing green when STATE=idle.
+ * Requires CONN green, Build/Builder/Build Date, no fault, door safe (if reported). 
+ * Off when disconnected. 
+ */
 export function readyState(inputs) {
   const {
     serialConnected,
@@ -35,6 +40,7 @@ export function readyState(inputs) {
     faultStateVal,
     hasDoorSafe,
     doorSafe,
+    telemetry,
   } = inputs;
   if (!serialConnected) return "off";
   const allGates =
@@ -42,7 +48,11 @@ export function readyState(inputs) {
     q1Complete &&
     faultStateVal === "off" &&
     (!hasDoorSafe || doorSafe === true);
-  return allGates ? "green" : "blink-yellow";
+  if (!allGates) return "blink-yellow";
+  const state = (telemetry?.STATE ?? "").toString().trim().toLowerCase();
+  if (state === "standby") return "green";
+  if (state === "idle") return "blink-green";
+  return "green";
 }
 
 /** HEAT: yellow when controller reports HEAT true. */

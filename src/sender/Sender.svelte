@@ -115,7 +115,22 @@
 
   $: displayLogs = buildDisplayLogs(logs);
 
+  /**
+   * Extract commit hash from build version string.
+   * Format: v1.0-27-g1bb9088-dirty -> extracts "1bb9088"
+   * Finds the 'g' and extracts everything after it up to the next '-' (if any).
+   */
+  function extractCommitHash(buildVersion) {
+    if (typeof buildVersion !== "string") return null;
+    const gIndex = buildVersion.indexOf("g");
+    if (gIndex === -1) return null;
+    const afterG = buildVersion.slice(gIndex + 1);
+    const dashIndex = afterG.indexOf("-");
+    return dashIndex === -1 ? afterG : afterG.slice(0, dashIndex);
+  }
+
   $: buildVersion = telemetry?.BUILD ?? null;
+  $: buildCommitHash = extractCommitHash(buildVersion);
   $: builderName = telemetry?.BUILDER ?? null;
   $: buildDateSec = telemetry?.BUILD_DATE ?? null;
   $: buildDateText =
@@ -173,7 +188,8 @@
     q1BuilderDone,
     q1BuildDateDone,
   });
-  $: readyGreen = statusStates?.ready === "green";
+  // Either green is ready state! 
+  $: readyGreen = statusStates?.ready === "green" || statusStates?.ready === "blink-green";
 
   async function handleStatusActivate(key) {
     if (key === "connection") {
@@ -407,7 +423,7 @@
             <span class="build-info-value build-version" class:dirty={buildIsDirty}>
               {#if buildVersion}
                 <a
-                  href={"https://github.com/Team-Thermocline/T-Code/commit/" + buildVersion}
+                  href={"https://github.com/Team-Thermocline/Controller/commit/" + (buildCommitHash ?? buildVersion)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style="color:inherit;text-decoration:underline;"
