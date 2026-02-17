@@ -49,7 +49,7 @@ main, section, div, article, header, nav {
 
 /* Home page: center content with wider max-width (fits three update columns) */
 .main-home.container {
-  max-width: 1680px;
+  max-width: 1880px;
   padding: 0 32px;
 }
 
@@ -145,7 +145,7 @@ main {
   flex-wrap: nowrap;
   gap: 14px;
   align-items: flex-start;
-  max-width: 1640px;
+  max-width: 1840px;
   margin: 0 auto;
   padding-left: 300px;
 }
