@@ -17,7 +17,7 @@
   let color = `hsl(${Math.random() * 360}, 80%, 60%)`;
   const id = crypto.randomUUID();
 
-  const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const isLocal = false;
   const WS_URL = isLocal ? "ws://localhost:8787" : "wss://asteroids-reflector.kenwood364.workers.dev";
 
   const PROJECTILE_SPEED = 8;
@@ -64,34 +64,41 @@
       vy: Math.sin(ship.angle) * PROJECTILE_SPEED,
       startX: ship.x,
       startY: ship.y,
-      ownerId: id
+      ownerId: id,
+      distanceTraveled: 0
     };
   }
 
   function updateProjectile() {
     if (!projectile) return;
+    const w = canvas ? canvas.width : 300;
+    const h = canvas ? canvas.height : 800;
+    const prevX = projectile.x;
+    const prevY = projectile.y;
     projectile.x += projectile.vx;
     projectile.y += projectile.vy;
-    const dx = projectile.x - projectile.startX;
-    const dy = projectile.y - projectile.startY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance > PROJECTILE_MAX_DISTANCE) {
+    projectile.x = ((projectile.x % w) + w) % w;
+    projectile.y = ((projectile.y % h) + h) % h;
+    const segmentDx = Math.min(Math.abs(projectile.x - prevX), w - Math.abs(projectile.x - prevX));
+    const segmentDy = Math.min(Math.abs(projectile.y - prevY), h - Math.abs(projectile.y - prevY));
+    projectile.distanceTraveled += Math.sqrt(segmentDx * segmentDx + segmentDy * segmentDy);
+    if (projectile.distanceTraveled > PROJECTILE_MAX_DISTANCE) {
       projectile = null;
     }
   }
 
   function checkCollisions() {
     if (!ship.alive) return;
-    
-    // Check if other players' projectiles hit us
+    const w = canvas ? canvas.width : 300;
+    const h = canvas ? canvas.height : 800;
+
+    // Check if other players' projectiles hit us (wrapped distance)
     for (const pid in players) {
       const p = players[pid];
       if (pid === id || !p.projectile) continue;
-      
-      const dx = p.projectile.x - ship.x;
-      const dy = p.projectile.y - ship.y;
+      const dx = Math.min(Math.abs(p.projectile.x - ship.x), w - Math.abs(p.projectile.x - ship.x));
+      const dy = Math.min(Math.abs(p.projectile.y - ship.y), h - Math.abs(p.projectile.y - ship.y));
       const dist = Math.sqrt(dx * dx + dy * dy);
-      
       if (dist < 15) {
         ship.alive = false;
         ship.respawnAt = Date.now() + RESPAWN_TIME;
