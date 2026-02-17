@@ -5,6 +5,7 @@
   import Docs from "./Docs.svelte";
   import Countdown from "./Countdown.svelte";
   import Timeline from "./Timeline.svelte";
+  import Game from "./game/Game.svelte";
 
   const navItems = [
     { label: "Home", href: "#home", page: "home" },
@@ -109,59 +110,63 @@
   <div class="edge-strip"></div>
 </header>
 
-<main class={currentPage === "sender" ? "container-wide" : "container"}>
+<main class={currentPage === "sender" ? "container-wide" : "container"} class:main-home={currentPage === "home"}>
   {#if currentPage === "home"}
-    <section class="content-block">
-      <h2>Welcome</h2>
-      <p>
-        Each year, SNHU Capstone teams are tasked with various projects. These projects 
-        simulate real-world engineering challenges and are meant to be a final culmination of
-        our engineering skills.
-        <br><br>
-        Team Thermocline is
-        
-        <a href="https://ez-bake.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">
-          one of two teams
-        </a>
-        
-        building a Thermal Testing Chamber as a capstone project for 2025-2026.
-        This site is a public facing hub for our process, deliverables, binaries, CAD, drawings, source code, repair
-        resources and all other aspects related to our project!
+    <div class="home-wrapper">
+      <div class="home-content">
+        <div class="home-layout">
+          <section class="content-block">
+            <h2>Welcome</h2>
+            <p>
+              Each year, SNHU Capstone teams are tasked with various projects. These projects 
+              simulate real-world engineering challenges and are meant to be a final culmination of
+              our engineering skills.
+              <br><br>
+              Team Thermocline is
+              
+              <a href="https://ez-bake.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">
+                one of two teams
+              </a>
+              
+              building a Thermal Testing Chamber as a capstone project for 2025-2026.
+              This site is a public facing hub for our process, deliverables, binaries, CAD, drawings, source code, repair
+              resources and all other aspects related to our project!
 
-        
-      </p>
+              
+            </p>
 
-      <h3>About SNHU</h3>
-      <ul class="link-list">
-        <li>
-          <a
-            href="https://www.snhu.edu/about-us/newsroom/education/what-is-a-capstone-project"
-            >What is a Capstone Project?</a
-          >
-        </li>
-      </ul>
+            <h3>About SNHU</h3>
+            <ul class="link-list">
+              <li>
+                <a
+                  href="https://www.snhu.edu/about-us/newsroom/education/what-is-a-capstone-project"
+                  >What is a Capstone Project?</a
+                >
+              </li>
+            </ul>
 
-      <h3>Project Resources</h3>
-      <ul class="link-list">
-        <li>
-          <a
-            href="https://cad.onshape.com/documents/0f6d7252fc29b453c7fe25c5/w/f9ad2d1b899e019a4809f833/e/44465f285c45dfca95ecae76?renderMode=0&uiState=6969aaa170ee313f4754e0f0"
-            target="_blank"
-            rel="noopener noreferrer"
-            >CAD Model (Onshape)</a
-          >
-        </li>
-        <li>
-          <a href="https://github.com/Team-Thermocline/Controller"
-            >Controller Firmware and Schematics (GitHub)</a
-          >
-        </li>
-      </ul>
+            <h3>Project Resources</h3>
+            <ul class="link-list">
+              <li>
+                <a
+                  href="https://cad.onshape.com/documents/0f6d7252fc29b453c7fe25c5/w/f9ad2d1b899e019a4809f833/e/44465f285c45dfca95ecae76?renderMode=0&uiState=6969aaa170ee313f4754e0f0"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >CAD Model (Onshape)</a
+                >
+              </li>
+              <li>
+                <a href="https://github.com/Team-Thermocline/Controller"
+                  >Controller Firmware and Schematics (GitHub)</a
+                >
+              </li>
+            </ul>
 
-      <h3>Click on any update below to see the details!</h3>
-    </section>
+            <h3>Click on any update below to see the details!</h3>
+          </section>
+        </div>
 
-    <section class="updates">
+        <section class="updates">
       <h2 class="updates-title">
         Updates
 
@@ -195,7 +200,13 @@
           {/each}
         </div>
       {/if}
-    </section>
+        </section>
+      </div>
+
+      <div class="game-box">
+        <Game />
+      </div>
+    </div>
   {:else if currentPage === "sender"}
     <Sender />
   {:else if currentPage === "docs"}

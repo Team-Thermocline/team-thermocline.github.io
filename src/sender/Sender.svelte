@@ -387,7 +387,7 @@
 
 <div class="sender">
   <div class="content">
-    <div class="top-row">
+      <div class="top-row">
       <div class="box connection">
         <div class="box-title">Connection</div>
 
