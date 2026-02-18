@@ -15,16 +15,24 @@ export function createSerialConnection() {
   let errorHandler = null;
   let autoConnectCallback = null;
 
-  // Electron IPC handlers
+  // Electron IPC handlers - use a function that always checks current state
+  let ipcDataCallback = null;
+  
   if (isElectron) {
-    window.electronSerial.onData((data) => {
+    // Create callback that always checks current handlers
+    ipcDataCallback = (data) => {
       if (connected && dataHandler) {
         // Convert string data to match Web Serial API format
         const encoder = new TextEncoder();
         const bytes = encoder.encode(data);
-        dataHandler(data, bytes);
+        try {
+          dataHandler(data, bytes);
+        } catch (err) {
+          console.error('Error calling dataHandler:', err);
+        }
       }
-    });
+    };
+    window.electronSerial.onData(ipcDataCallback);
 
     window.electronSerial.onError((error) => {
       if (connected && errorHandler) {
@@ -34,7 +42,6 @@ export function createSerialConnection() {
 
     // Handle auto-connect notification
     window.electronSerial.onAutoConnected((portPath) => {
-      console.log('Auto-connected to:', portPath);
       connected = true;
       if (autoConnectCallback) {
         autoConnectCallback(portPath);
@@ -57,10 +64,28 @@ export function createSerialConnection() {
 
       if (isElectron) {
         // Use Electron IPC for serial communication
+        // Check if already connected first
+        const alreadyConnected = await window.electronSerial.isConnected();
+        if (alreadyConnected) {
+          // Port is already connected, just set up handlers
+          connected = true;
+          // Re-register IPC listener to ensure it uses current handlers
+          if (ipcDataCallback) {
+            window.electronSerial.removeAllListeners('serial-data');
+            window.electronSerial.onData(ipcDataCallback);
+          }
+          return true;
+        }
+        
         try {
           const result = await window.electronSerial.connect(baudRate);
           if (result.success) {
             connected = true;
+            // Re-register IPC listener
+            if (ipcDataCallback) {
+              window.electronSerial.removeAllListeners('serial-data');
+              window.electronSerial.onData(ipcDataCallback);
+            }
             return true;
           } else {
             onError?.(result.error || 'Failed to connect');

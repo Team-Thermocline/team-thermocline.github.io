@@ -219,7 +219,14 @@
   onMount(async () => {
     if (isElectron) {
       // Set up auto-connect callback
-      serial.setAutoConnectCallback((portPath) => {
+      serial.setAutoConnectCallback(async (portPath) => {
+        // Call connect() to set up data handlers, even though port is already connected
+        // This ensures dataHandler and errorHandler are set up
+        await serial.connect(baudRate, handleSerialData, (err) => {
+          addLog(`Connection error: ${err}`, "error");
+          lastConnectionError = err;
+        });
+        
         // Initialize command queue when auto-connected
         lineProcessor.reset();
         commandQueue = createCommandQueue(
