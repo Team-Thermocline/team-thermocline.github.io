@@ -168,7 +168,7 @@ main {
 .game-box {
   flex: 0 0 300px;
   align-self: flex-start;
-  height: 800px;
+  min-height: 800px;
 }
 
 .content-block h2 {

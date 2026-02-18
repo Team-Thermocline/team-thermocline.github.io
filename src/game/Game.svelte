@@ -382,18 +382,28 @@
   });
 </script>
 
-<div class="game-box" bind:this={gameContainer} tabindex="0" role="application" aria-label="Asteroids game">
-  <canvas bind:this={canvas}></canvas>
-  {#if !gameStarted}
-    <div class="start-screen" on:click={startGame} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && startGame()}>
-      <h1>Thermocline Asteroids</h1>
-      <p>Click to Play</p>
-      <p class="hint">or press Enter</p>
-    </div>
-  {/if}
+<div class="game-wrapper">
+  <div class="game-box" bind:this={gameContainer} tabindex="0" role="application" aria-label="Asteroids game">
+    <canvas bind:this={canvas}></canvas>
+    {#if !gameStarted}
+      <div class="start-screen" on:click={startGame} role="button" tabindex="0" on:keydown={(e) => e.key === "Enter" && startGame()}>
+        <h1>Thermocline Asteroids</h1>
+        <p>Click to Play</p>
+        <p class="hint">or press Enter</p>
+      </div>
+    {/if}
+  </div>
+  <p class="game-hint">Play with other people browsing the site!<br />Use arrow keys to move and space to shoot</p>
 </div>
 
 <style>
+  .game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
   .game-box {
     width: 300px;
     height: 800px;
@@ -443,5 +453,17 @@
   .start-screen .hint {
     font-size: 14px;
     opacity: 0.7;
+  }
+
+  .game-hint {
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #888;
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    max-width: 300px;
   }
 </style>
