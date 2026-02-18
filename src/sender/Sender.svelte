@@ -1,5 +1,5 @@
 <script>
-  import { afterUpdate } from "svelte";
+  import { afterUpdate, onMount } from "svelte";
   import "./Sender.css";
   import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
@@ -14,6 +14,7 @@
 
   let serial = createSerialConnection();
   let baudRate = 115200;
+  const isElectron = typeof window !== 'undefined' && window.electronSerial;
   let logs = [];
   let temperature = "";
   let showKeepalives = false;
@@ -214,6 +215,65 @@
     }
   });
 
+  // Auto-connect on mount if in Electron
+  onMount(async () => {
+    if (isElectron) {
+      // Set up auto-connect callback
+      serial.setAutoConnectCallback(async (portPath) => {
+        // Call connect() to set up data handlers, even though port is already connected
+        // This ensures dataHandler and errorHandler are set up
+        await serial.connect(baudRate, handleSerialData, (err) => {
+          addLog(`Connection error: ${err}`, "error");
+          lastConnectionError = err;
+        });
+        
+        // Initialize command queue when auto-connected
+        lineProcessor.reset();
+        commandQueue = createCommandQueue(
+          (cmd) => serial.write(cmd),
+          {
+            onSend(cmd) {
+              if (isQ0Command(cmd)) {
+                pendingQ0 = 1;
+                pendingQ0StartedAt = Date.now();
+              }
+              if (!showUpdates && isQ0Command(cmd)) upsertCollapsedQ0();
+              else addLog(`TX: ${cmd}`, "tx");
+            },
+          }
+        );
+        addLog(`Auto-connected to ${portPath} at ${baudRate} baud`, "success");
+        startQueryPolling();
+        runQ1StartupQueries();
+      });
+      
+      // Check if already connected (in case auto-connect happened before callback was set)
+      setTimeout(async () => {
+        const isConnected = await window.electronSerial.isConnected();
+        if (isConnected && !commandQueue) {
+          // Already connected but callback wasn't called, initialize now
+          lineProcessor.reset();
+          commandQueue = createCommandQueue(
+            (cmd) => serial.write(cmd),
+            {
+              onSend(cmd) {
+                if (isQ0Command(cmd)) {
+                  pendingQ0 = 1;
+                  pendingQ0StartedAt = Date.now();
+                }
+                if (!showUpdates && isQ0Command(cmd)) upsertCollapsedQ0();
+                else addLog(`TX: ${cmd}`, "tx");
+              },
+            }
+          );
+          addLog(`Connected at ${baudRate} baud`, "success");
+          startQueryPolling();
+          runQ1StartupQueries();
+        }
+      }, 2000);
+    }
+  });
+
   function startQueryPolling() {
     stopQueryPolling();
     const ms = Math.max(100, Math.min(60000, Number(queryIntervalMs) || 1000));
@@ -253,7 +313,12 @@
     q1BuildDone = false;
     q1BuilderDone = false;
     q1BuildDateDone = false;
-    addLog("Requesting serial port...", "info");
+    
+    if (isElectron) {
+      addLog("Connecting to serial port...", "info");
+    } else {
+      addLog("Requesting serial port...", "info");
+    }
 
     const success = await serial.connect(baudRate, handleSerialData, (err) => {
       addLog(`Connection error: ${err}`, "error");
