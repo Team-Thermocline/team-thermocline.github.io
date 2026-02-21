@@ -24,7 +24,7 @@
     { timestamp: dateToTimestamp('2026-01-20'), label: 'I&T Flows, Verification Matrix' },
     { timestamp: dateToTimestamp('2026-02-13'), label: 'Interim Report' },
     { timestamp: dateToTimestamp('2026-02-10'), label: 'Subsystem Operation' },
-    { timestamp: dateToTimestamp('2026-02-24'), label: 'TRR Presentations' },
+    { timestamp: dateToTimestamp('2026-02-26'), label: 'TRR Presentations' },
     { timestamp: dateToTimestamp('2026-03-17'), label: 'Functional Demo' },
     { timestamp: dateToTimestamp('2026-03-31'), label: 'Final TRR' },
     { timestamp: dateToTimestamp('2026-04-16'), label: 'Final Tests' },
