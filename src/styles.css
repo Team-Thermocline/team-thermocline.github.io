@@ -171,6 +171,16 @@ main {
   min-height: 800px;
 }
 
+@media (max-width: 768px) {
+  .game-box {
+    display: none;
+  }
+
+  .home-wrapper {
+    padding-left: 0;
+  }
+}
+
 .content-block h2 {
   margin: 0 0 12px 0;
   font-size: 18px;

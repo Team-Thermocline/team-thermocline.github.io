@@ -15,12 +15,32 @@
   const updates = loadUpdates();
   let active = null;
   let currentPage = "home";
+  let isMobile = false;
+
+  if (typeof window !== "undefined") {
+    const mq = window.matchMedia("(max-width: 768px)");
+    isMobile = mq.matches;
+    mq.addEventListener("change", (e) => {
+      isMobile = e.matches;
+      if (isMobile && currentPage === "sender") {
+        currentPage = "home";
+        window.location.hash = "home";
+      }
+    });
+  }
+
+  $: visibleNavItems = isMobile ? navItems.filter((i) => i.page !== "sender") : navItems;
+  $: effectivePage = isMobile && currentPage === "sender" ? "home" : currentPage;
 
   // Initialize from hash on page load
   if (typeof window !== "undefined") {
     const hash = window.location.hash.slice(1);
     if (hash && ["home", "docs", "sender"].includes(hash)) {
       currentPage = hash;
+      if (isMobile && hash === "sender") {
+        currentPage = "home";
+        window.location.hash = "home";
+      }
     } else if (hash && hash.startsWith("update:")) {
       const slug = hash.slice(7); // Remove "update:" prefix
       const update = updates.find((u) => u.slug === slug);
@@ -45,7 +65,7 @@
     }
   }
   function navigate(page) {
-    if (page) {
+    if (page && !(isMobile && page === "sender")) {
       currentPage = page;
       active = null; // Close any open update when navigating
       // Update URL hash
@@ -60,7 +80,8 @@
     window.addEventListener("hashchange", () => {
       const hash = window.location.hash.slice(1);
       if (hash && ["home", "docs", "sender"].includes(hash)) {
-        currentPage = hash;
+        currentPage = isMobile && hash === "sender" ? "home" : hash;
+        if (isMobile && hash === "sender") window.location.hash = "home";
         active = null;
       } else if (hash && hash.startsWith("update:")) {
         const slug = hash.slice(7);
@@ -89,12 +110,14 @@
         src="/logos/Thermocline%20Logo.png"
         alt="Team Thermocline Logo"
       />
-      <Countdown />
+      {#if !isMobile}
+        <Countdown />
+      {/if}
     </div>
   </div>
   <nav class="navbar">
     <div class="container nav-inner">
-      {#each navItems as item}
+      {#each visibleNavItems as item}
         <a
           class="nav-btn"
           href={item.href}
@@ -102,7 +125,9 @@
           on:click={() => navigate(item.page)}>{item.label}</a
         >
       {/each}
-      <Timeline />
+      {#if !isMobile}
+        <Timeline />
+      {/if}
     </div>
   </nav>
   <div class="edge-strip"></div>
@@ -110,8 +135,8 @@
   <div class="edge-strip"></div>
 </header>
 
-<main class={currentPage === "sender" ? "container-wide" : "container"} class:main-home={currentPage === "home"}>
-  {#if currentPage === "home"}
+<main class={effectivePage === "sender" ? "container-wide" : "container"} class:main-home={effectivePage === "home"}>
+  {#if effectivePage === "home"}
     <div class="home-wrapper">
       <div class="home-content">
         <div class="home-layout">
@@ -207,9 +232,9 @@
         <Game />
       </div>
     </div>
-  {:else if currentPage === "sender"}
+  {:else if effectivePage === "sender"}
     <Sender />
-  {:else if currentPage === "docs"}
+  {:else if effectivePage === "docs"}
     <Docs />
   {/if}
 </main>
