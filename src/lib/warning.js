@@ -37,7 +37,7 @@ function injectStyles() {
     }
     @keyframes popup-warning-move {
       0% { background-position: 0 0; }
-      100% { background-position: 40px 40px; }
+      100% { background-position: 28px 28px; }
     }
     .popup-warning-message {
       font-size: clamp(1.5rem, 6vw, 3rem);
@@ -46,6 +46,10 @@ function injectStyles() {
       text-shadow: 0 0 8px #000, 0 2px 4px #000;
       text-align: center;
       padding: 1.5rem 2rem;
+    }
+    .popup-warning-message a {
+      color: #f5c518;
+      text-decoration: underline;
     }
   `;
   document.head.appendChild(style);
@@ -56,8 +60,9 @@ function injectStyles() {
  * Shows a full screen warning bar, have to click off
  * has animation too :P
  * @param {string} message - Text show on the warning
+ * @param {{ linkUrl?: string, linkText?: string }} [opts] - If linkUrl is set, appends " linkText" as a link.
  */
-export function showWarning(message) {
+export function showWarning(message, opts = {}) {
   if (typeof document === "undefined") return;
   injectStyles();
 
@@ -74,6 +79,16 @@ export function showWarning(message) {
   const msgEl = document.createElement("div");
   msgEl.className = "popup-warning-message";
   msgEl.textContent = message ?? "Warning";
+  if (opts.linkUrl) {
+    const a = document.createElement("a");
+    a.href = opts.linkUrl;
+    a.textContent = opts.linkText ?? "here";
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.addEventListener("click", (e) => e.stopPropagation());
+    msgEl.appendChild(document.createTextNode(" "));
+    msgEl.appendChild(a);
+  }
   const stripesBottom = document.createElement("div");
   stripesBottom.className = "popup-warning-stripes";
 

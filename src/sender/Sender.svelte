@@ -142,6 +142,15 @@
   $: buildIsDirty = typeof buildVersion === "string" && buildVersion.includes("-dirty");
   $: q1Complete = q1BuildDone && q1BuilderDone && q1BuildDateDone;
 
+  let dirtyWarningShown = false;
+  $: if (buildIsDirty && q1Complete && !dirtyWarningShown) {
+    dirtyWarningShown = true;
+    showWarning("WARNING: Build is dirty! Download the latest build from", {
+      linkUrl: "https://github.com/Team-Thermocline/Controller/releases/latest",
+      linkText: "here",
+    });
+  }
+
   // For debug table polling
   let lastPolledByKey = {};
 
@@ -325,6 +334,7 @@
     hasReceivedGoodRx = false;
     pendingQ0 = 0;
     pendingQ0StartedAt = 0;
+    dirtyWarningShown = false;
     await serial.disconnect();
     addLog("Disconnected", "info");
   }
