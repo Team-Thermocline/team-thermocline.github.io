@@ -11,6 +11,7 @@
   import Graph from "./Graph.svelte";
   import { computeStatusStates } from "./statusGridState.js";
   import { createCommandQueue } from "./commandQueue.js";
+  import { showWarning } from "../lib/warning.js";
 
   let serial = createSerialConnection();
   let baudRate = 115200;
@@ -200,6 +201,7 @@
     }
     if (key === "test") {
       TEST_MODE = !TEST_MODE;
+      showWarning("WARNING: Test mode is now " + (TEST_MODE ? "ON" : "OFF")); // Shows you the test warning
     }
   }
 
