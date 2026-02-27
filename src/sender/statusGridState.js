@@ -12,18 +12,21 @@ function asNumber(v) {
   return typeof v === "number" ? v : Number(v);
 }
 
-/** CONN: green when connected and at least one good RX line; red on error; else yellow (connecting/disconnected). */
+/** CONN: green when connected and at least one good RX line; red on error or queue full (≥25); else yellow. */
 export function connectionState(inputs) {
-  const { lastConnectionError, serialConnected, hasReceivedGoodRx } = inputs;
+  const { lastConnectionError, serialConnected, hasReceivedGoodRx, commandQueueLength = 0 } = inputs;
   if (lastConnectionError) return "blink-red";
+  if (commandQueueLength >= 25) return "blink-red";
   if (serialConnected && hasReceivedGoodRx) return "green";
   return "blink-yellow";
 }
 
-/** FAULT: red when alarm value non-zero. */
+/** FAULT: red when alarm non-zero or FAULT string is not NONE. */
 export function faultState(inputs) {
-  const { alarmValue } = inputs;
-  return alarmValue !== 0 ? "blink-red" : "off";
+  const { alarmValue, faultString } = inputs;
+  if (alarmValue !== 0) return "blink-red";
+  if (faultString && faultString.toUpperCase() !== "NONE") return "blink-red";
+  return "off";
 }
 
 /* Ready, Its a lot of conditions!
@@ -90,6 +93,7 @@ export function doorSafeState(inputs) {
  *   serialConnected: boolean,
  *   hasReceivedGoodRx: boolean,
  *   lastConnectionError: string | null,
+ *   commandQueueLength: number (optional),
  *   telemetry: object | null,
  *   testMode: boolean,
  *   q1BuildDone: boolean,
@@ -100,6 +104,8 @@ export function doorSafeState(inputs) {
 export function computeStatusStates(inputs) {
   const alarmValue =
     inputs.telemetry?.ALARM == null ? 0 : asNumber(inputs.telemetry.ALARM);
+  const faultString =
+    inputs.telemetry?.FAULT != null ? String(inputs.telemetry.FAULT).trim() : "";
   const hasDoor = typeof inputs.telemetry?.DOOR === "boolean";
   const door = hasDoor ? inputs.telemetry.DOOR : null;
   const hasDoorSafe = typeof inputs.telemetry?.DOOR_SAFE === "boolean";
@@ -108,7 +114,7 @@ export function computeStatusStates(inputs) {
     inputs.q1BuildDone && inputs.q1BuilderDone && inputs.q1BuildDateDone;
 
   const conn = connectionState(inputs);
-  const fault = faultState({ ...inputs, alarmValue });
+  const fault = faultState({ ...inputs, alarmValue, faultString });
 
   return {
     connection: conn,

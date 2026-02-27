@@ -4,18 +4,24 @@
  * Max 25 commands (queued + in-flight); over that we reject.
  */
 
-const MAX_QUEUE = 25;
 const OK_REGEX = /^ok\b/i; // Thank the epstein files for the regex handbook copy
 
+export const MAX_QUEUE = 25;
+
 export function createCommandQueue(writeFn, options = {}) {
-  const { onSend } = options;
+  const { onSend, onQueueChange } = options;
   const queue = [];
   let inFlight = null;
+
+  function total() {
+    return queue.length + (inFlight ? 1 : 0);
+  }
 
   function drain() {
     if (inFlight || queue.length === 0) return;
     const { command, resolve } = queue.shift();
     inFlight = { command, lines: [], resolve };
+    onQueueChange?.(total());
 
     Promise.resolve(writeFn(command)).then((ok) => {
       onSend?.(command);
@@ -30,8 +36,7 @@ export function createCommandQueue(writeFn, options = {}) {
   return {
     /** Enqueue a command. Resolves with reply lines (including "ok") when device sends "ok". Rejects if queue full. */
     send(command) {
-      const total = queue.length + (inFlight ? 1 : 0);
-      if (total >= MAX_QUEUE) {
+      if (total() >= MAX_QUEUE) {
         return Promise.reject(new Error(`Command queue full (max ${MAX_QUEUE})`));
       }
       return new Promise((resolve) => {
@@ -49,6 +54,7 @@ export function createCommandQueue(writeFn, options = {}) {
         inFlight.resolve(inFlight.lines);
         inFlight = null;
         drain();
+        onQueueChange?.(total()); // Updates the command queue length
       }
     },
   };

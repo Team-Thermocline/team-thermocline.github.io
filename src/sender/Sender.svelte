@@ -10,7 +10,7 @@
   import StatusGrid from "./StatusGrid.svelte";
   import Graph from "./Graph.svelte";
   import { computeStatusStates } from "./statusGridState.js";
-  import { createCommandQueue } from "./commandQueue.js";
+  import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
 
   let serial = createSerialConnection();
@@ -23,6 +23,7 @@
   let queryInterval = null;
   let queryIntervalMs = 1000; // Time between Q0 queries in milliseconds
   let commandQueue = null;
+  let commandQueueLength = 0; // Length of the command queue
   let telemetry = null;
   let manualCommand = "";
 
@@ -151,8 +152,15 @@
     });
   }
 
+  let bufferWarningShown = false;
+  $: if (commandQueueLength >= MAX_QUEUE && !bufferWarningShown) {
+    bufferWarningShown = true;
+    showWarning(`Command queue full (${MAX_QUEUE}). Stop sending or wait for device to catch up.`);
+  }
+
   // For debug table polling
   let lastPolledByKey = {};
+  let lastFaultWarned = null;
 
   function applyParsedTelemetry(parsed) {
     if (!parsed) return;
@@ -170,6 +178,16 @@
       ...telemetry,
       ...parsed,
     };
+
+    // Show warning if FAULT is not NONE
+    if (Object.prototype.hasOwnProperty.call(parsed, "FAULT")) {
+      const f = String(parsed.FAULT ?? "").trim();
+      if (f && f.toUpperCase() !== "NONE" && f !== lastFaultWarned) {
+        lastFaultWarned = f;
+        showWarning("FAULT! " + f);
+      }
+      if (f.toUpperCase() === "NONE") lastFaultWarned = null;
+    }
 
     // Record time-series samples when Q0 telemetry arrives
     if (Object.prototype.hasOwnProperty.call(parsed, "TEMP") || Object.prototype.hasOwnProperty.call(parsed, "RH")) {
@@ -193,6 +211,7 @@
     serialConnected: serial.connected,
     hasReceivedGoodRx,
     lastConnectionError,
+    commandQueueLength,
     telemetry,
     testMode: TEST_MODE,
     q1BuildDone,
@@ -273,6 +292,7 @@
 
     if (success) {
       lineProcessor.reset();
+      commandQueueLength = 0;
       commandQueue = createCommandQueue(
         (cmd) => serial.write(cmd),
         {
@@ -283,6 +303,9 @@
             }
             if (!showUpdates && isQ0Command(cmd)) upsertCollapsedQ0();
             else addLog(`TX: ${cmd}`, "tx");
+          },
+          onQueueChange(n) {
+            commandQueueLength = n;
           },
         }
       );
@@ -330,11 +353,14 @@
   async function disconnect() {
     stopQueryPolling();
     commandQueue = null;
+    commandQueueLength = 0;
     lastConnectionError = null;
     hasReceivedGoodRx = false;
     pendingQ0 = 0;
     pendingQ0StartedAt = 0;
     dirtyWarningShown = false;
+    bufferWarningShown = false;
+    lastFaultWarned = null;
     await serial.disconnect();
     addLog("Disconnected", "info");
   }
