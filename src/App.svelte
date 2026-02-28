@@ -17,6 +17,13 @@
   let currentPage = "home";
   let isMobile = false;
 
+  // Kiosk mode: ?kiosk=1 in URL shows only Sender
+  let kioskMode = false;
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    kioskMode = params.get("kiosk") === "1";
+  }
+
   if (typeof window !== "undefined") {
     const mq = window.matchMedia("(max-width: 768px)");
     isMobile = mq.matches;
@@ -102,6 +109,11 @@
   on:keydown={(e) => e.key === "Escape" && active && closeUpdate()}
 />
 
+{#if kioskMode}
+  <div class="kiosk-wrap">
+    <Sender />
+  </div>
+{:else}
 <header class="topbar">
   <div class="container">
     <div class="brand">
@@ -277,4 +289,5 @@
       </div>
     </div>
   </div>
+{/if}
 {/if}

@@ -27,6 +27,9 @@
   let telemetry = null;
   let manualCommand = "";
 
+  // In Electron we have window.electronSerial; hide terminal/export CSV for kiosk
+  $: isElectron = typeof window !== "undefined" && !!window.electronSerial;
+
   // UI and Terminal state vars
   let terminalEl = null;
   let stickToBottom = true;
@@ -423,7 +426,7 @@
   }
 </script>
 
-<div class="sender">
+<div class="sender" class:electron-kiosk={isElectron}>
   <div class="content">
       <div class="top-row">
       <div class="box connection">
@@ -544,9 +547,11 @@
         sendTcode={sendTcode}
         queryIntervalMs={queryIntervalMs}
         setQueryIntervalMs={setQueryIntervalMs}
+        isElectron={isElectron}
       />
     </div>
 
+    {#if !isElectron}
     <div class="box terminal">
       <div class="box-title">Terminal</div>
       <div class="terminal-shell">
@@ -582,5 +587,6 @@
         </div>
       </div>
     </div>
+    {/if}
   </div>
 </div>
