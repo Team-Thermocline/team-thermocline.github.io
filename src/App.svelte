@@ -6,6 +6,7 @@
   import Countdown from "./Countdown.svelte";
   import Timeline from "./Timeline.svelte";
   import Game from "./game/Game.svelte";
+  import { isKioskUrl } from "./lib/kiosk.js";
 
   const navItems = [
     { label: "Home", href: "#home", page: "home" },
@@ -17,12 +18,7 @@
   let currentPage = "home";
   let isMobile = false;
 
-  // Kiosk mode: ?kiosk=1 in URL shows only Sender
-  let kioskMode = false;
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    kioskMode = params.get("kiosk") === "1";
-  }
+  let kioskMode = typeof window !== "undefined" && isKioskUrl();
 
   if (typeof window !== "undefined") {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -111,7 +107,7 @@
 
 {#if kioskMode}
   <div class="kiosk-wrap">
-    <Sender />
+    <Sender kioskMode={true} />
   </div>
 {:else}
 <header class="topbar">
@@ -245,7 +241,7 @@
       </div>
     </div>
   {:else if effectivePage === "sender"}
-    <Sender />
+    <Sender kioskMode={false} />
   {:else if effectivePage === "docs"}
     <Docs />
   {/if}

@@ -12,7 +12,7 @@
   export let sendTcode = null;
   export let queryIntervalMs = 1000;
   export let setQueryIntervalMs = () => {};
-  export let isElectron = false;
+  export let isKiosk = false;
 
   let showDebugPopup = false;
   let debugPopupWasOpen = false;
@@ -176,7 +176,7 @@
 
 <div class="graph-root">
   <div class="graph-toolbar">
-    {#if !isElectron}
+    {#if !isKiosk}
     <button type="button" on:click={downloadCsv}>Export CSV</button>
     {/if}
     <div class="graph-meta">

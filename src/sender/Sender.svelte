@@ -12,6 +12,10 @@
   import { computeStatusStates } from "./statusGridState.js";
   import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
+  import { hasElectronSerial } from "../lib/kiosk.js";
+
+  export let kioskMode = false;
+  $: isKiosk = kioskMode || hasElectronSerial();
 
   let serial = createSerialConnection();
   let baudRate = 115200;
@@ -26,9 +30,6 @@
   let commandQueueLength = 0; // Length of the command queue
   let telemetry = null;
   let manualCommand = "";
-
-  // In Electron we have window.electronSerial; hide terminal/export CSV for kiosk
-  $: isElectron = typeof window !== "undefined" && !!window.electronSerial;
 
   // UI and Terminal state vars
   let terminalEl = null;
@@ -426,7 +427,7 @@
   }
 </script>
 
-<div class="sender" class:electron-kiosk={isElectron}>
+<div class="sender" class:kiosk={isKiosk}>
   <div class="content">
       <div class="top-row">
       <div class="box connection">
@@ -547,11 +548,11 @@
         sendTcode={sendTcode}
         queryIntervalMs={queryIntervalMs}
         setQueryIntervalMs={setQueryIntervalMs}
-        isElectron={isElectron}
+        isKiosk={isKiosk}
       />
     </div>
 
-    {#if !isElectron}
+    {#if !isKiosk}
     <div class="box terminal">
       <div class="box-title">Terminal</div>
       <div class="terminal-shell">

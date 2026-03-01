@@ -2,12 +2,12 @@
   padding: 12px;
 }
 
-/* In Electron kiosk: use full width so content fits the display */
-.sender.electron-kiosk {
+/* Kiosk (URL ?kiosk=1 or Electron): full width, compact layout */
+.sender.kiosk {
   padding: 8px;
   box-sizing: border-box;
 }
-.sender.electron-kiosk .content {
+.sender.kiosk .content {
   width: 100%;
   max-width: none;
   margin: 0;
