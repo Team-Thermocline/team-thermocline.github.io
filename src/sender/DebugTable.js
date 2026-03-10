@@ -20,6 +20,9 @@ const DEBUG_KEYS = [
   { key: "FAULT", label: "Fault", pollInterval: 5000 },
   { key: "COMPRESSOR_ON_TIME", label: "Compressor On Time", pollInterval: 10000 },
   { key: "COMPRESSOR_OFF_TIME", label: "Compressor Off Time", pollInterval: 10000 },
+  { key: "SHT35_TEMPERATURE_C", label: "SHT35 Temperature (°C)", pollInterval: 5000 },
+  { key: "SHT35_HUMIDITY", label: "SHT35 Humidity", pollInterval: 5000 },
+  { key: "I2C_SCAN", label: "I2C Devices", pollInterval: 25000 },
 ];
 
 function formatValue(key, raw) {
@@ -27,7 +30,20 @@ function formatValue(key, raw) {
   if (key === "BUILD_DATE" && typeof raw === "number" && Number.isFinite(raw)) {
     return new Date(raw * 1000).toLocaleString();
   }
+
+  // Special cases
+  if (key === "I2C_SCAN") {
+    // For I2C scan just show the direct output
+    if (typeof raw === "number" && Number.isFinite(raw)) {
+      return `0x${raw.toString(16).toUpperCase()}`;
+    }
+    return String(raw);
+  }
+
+  // Bools
   if (typeof raw === "boolean") return raw ? "true" : "false";
+
+  // Default
   return String(raw);
 }
 
