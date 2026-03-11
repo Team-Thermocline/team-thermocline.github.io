@@ -193,6 +193,14 @@
                   >Controller Firmware and Schematics (GitHub)</a
                 >
               </li>
+              <li>
+                <a
+                  href="https://photos.app.goo.gl/TsxRDsSTB1DSMw6X6"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Photo Album</a
+                >
+              </li>
             </ul>
 
             <h3>Click on any update below to see the details!</h3>
