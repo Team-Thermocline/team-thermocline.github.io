@@ -14,6 +14,26 @@
     { label: "Sender", href: "#sender", page: "sender" },
   ];
   const updates = loadUpdates();
+  const projectResources = [
+    {
+      title: "CAD Model",
+      href: "https://cad.onshape.com/documents/0f6d7252fc29b453c7fe25c5/w/f9ad2d1b899e019a4809f833/e/44465f285c45dfca95ecae76?renderMode=0&uiState=6969aaa170ee313f4754e0f0",
+      blurb: "Our complete system, designed in 3D on Onshape.",
+      imageUrl: "/previews/onshape.png"
+    },
+    {
+      title: "Firmware and Schematics",
+      href: "https://github.com/Team-Thermocline/Controller",
+      blurb: "Embedded firmware, schematics, and electronics design files on GitHub.",
+      imageUrl: "/previews/controller.png"
+    },
+    {
+      title: "Photo Album",
+      href: "https://photos.app.goo.gl/TsxRDsSTB1DSMw6X6",
+      blurb: "Photos of the build, testing, development and team activities!",
+      imageUrl: "/previews/photos.png"
+    }
+  ];
   let active = null;
   let currentPage = "home";
   let isMobile = false;
@@ -179,29 +199,22 @@
             </ul>
 
             <h3>Project Resources</h3>
-            <ul class="link-list">
-              <li>
+            <div class="project-resources-grid">
+              {#each projectResources as r}
                 <a
-                  href="https://cad.onshape.com/documents/0f6d7252fc29b453c7fe25c5/w/f9ad2d1b899e019a4809f833/e/44465f285c45dfca95ecae76?renderMode=0&uiState=6969aaa170ee313f4754e0f0"
+                  class="project-card"
+                  href={r.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  >CAD Model (Onshape)</a
                 >
-              </li>
-              <li>
-                <a href="https://github.com/Team-Thermocline/Controller"
-                  >Controller Firmware and Schematics (GitHub)</a
-                >
-              </li>
-              <li>
-                <a
-                  href="https://photos.app.goo.gl/TsxRDsSTB1DSMw6X6"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  >Photo Album</a
-                >
-              </li>
-            </ul>
+                  <img class="project-card-thumb" src={r.imageUrl} alt={r.title} />
+                  <div class="project-card-body">
+                    <h4 class="project-card-title">{r.title}</h4>
+                    <p class="project-card-blurb">{r.blurb}</p>
+                  </div>
+                </a>
+              {/each}
+            </div>
 
             <h3>Click on any update below to see the details!</h3>
           </section>
