@@ -3,7 +3,23 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [svelte()],
+    // onshape-redirect! Its a little clunky and maybe not the best way
+    // but, we make a mini plugin at /onshape with that
+    // static index file that works as a redirect.
+    plugins: [
+        svelte(),
+        {
+            name: 'onshape-redirect',
+            configureServer(server) {
+                server.middlewares.use((req, res, next) => {
+                    if (req.url === '/onshape' || req.url === '/onshape/') {
+                        req.url = '/onshape/index.html'
+                    }
+                    next()
+                })
+            }
+        }
+    ],
     publicDir: 'static',
     assetsInclude: ['**/*.zip'], // Allows us to serve static zip packages
     server: {
