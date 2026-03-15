@@ -3,6 +3,7 @@
   import { marked } from "marked";
   import Sender from "./sender/Sender.svelte";
   import Docs from "./Docs.svelte";
+  import Credits from "./Credits.svelte";
   import Countdown from "./Countdown.svelte";
   import Timeline from "./Timeline.svelte";
   import Game from "./game/Game.svelte";
@@ -13,6 +14,7 @@
     { label: "Home", href: "/#home", page: "home" },
     { label: "Docs", href: "/docs/", page: "docs" },
     { label: "Sender", href: "/#sender", page: "sender" },
+    { label: "Credits", href: "/#credits", page: "credits" },
   ];
   const updates = loadUpdates();
   const projectResources = [
@@ -74,7 +76,7 @@
     }
 
     const hash = window.location.hash.slice(1);
-    if (hash && ["home", "docs", "sender"].includes(hash)) {
+    if (hash && ["home", "docs", "sender", "credits"].includes(hash)) {
       currentPage = isMobile && hash === "sender" ? "home" : hash;
       if (isMobile && hash === "sender") {
         history.replaceState({ spa: true }, "", "/#home");
@@ -140,6 +142,12 @@
     if (page === "sender") {
       history.pushState({ spa: true }, "", "/#sender");
       currentPage = "sender";
+      return;
+    }
+    if (page === "credits") {
+      history.pushState({ spa: true }, "", "/#credits");
+      currentPage = "credits";
+      return;
     }
   }
 </script>
@@ -291,6 +299,8 @@
     <Sender kioskMode={false} />
   {:else if effectivePage === "docs"}
     <Docs sphinxRelPath={docsSphinxRelPath} />
+  {:else if effectivePage === "credits"}
+    <Credits />
   {/if}
 </main>
 
