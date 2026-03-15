@@ -1,29 +1,40 @@
 <script>
   const creditsSections = [
     {
+      title: "Sponsors",
+      entries: [
+        { name: "Sedutto Motorsports", role: "Manufacturing Sponsor" },
+      ],
+    },
+    {
       title: "Faculty",
       entries: [
         { name: "Professor McInnis", role: "Capstone" },
         { name: "Professor Monk", role: "Project Sponsor" },
-        { name: "John Vincent", role: "IDEA Lab Director" },
+        { name: "John Vincent", role: "IDEA Lab Director and Reviewer" },
+        { name: "Dr. Ruben Del-Rio-Ruiz", role: "Engineering Lab Facilitator and Reviewer" },
+        { name: "Jason Crowell", role: "Lab Operations Specialist" },
       ],
     },
     { title: "Mentors and Experts", 
     entries: [
+      { name: "Arthur Aznive", role: "Reviewer" },
       { name: "Mark Sedutto", role: "Reviewer" },
       { name: "Mike Sedutto", role: "Reviewer" },
+      { name: "Tyler", role: "HVAC Expert" },
     ]},
-    {
-      title: "Sponsors",
-      entries: [
-        { name: "Sedutto Motorsports", role: "Manufacturing and Reviewer" },
-      ],
-    },
+    { title: "Classmates", 
+    entries: [
+      { name: "Matthew MacDonald", role: "Software Collaborator" },
+      { name: "Jimmy Small", role: "EPA Certified" },
+    ]},
     {
       title: "Manufacturers",
       entries: [
         { name: "SendCutSend", role: "Manufacturing" },
         { name: "JLCPCB", role: "Manufacturing" },
+        { name: "LCSC", role: "Supplier" },
+        { name: "Cohen Steel", role: "Supplier" },
       ],
     },
   ];
