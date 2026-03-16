@@ -23,6 +23,8 @@ const DEBUG_KEYS = [
   { key: "SHT35_TEMPERATURE_C", label: "SHT35 Temperature (°C)", pollInterval: 5000 },
   { key: "SHT35_HUMIDITY", label: "SHT35 Humidity", pollInterval: 5000 },
   { key: "I2C_SCAN", label: "I2C Devices", pollInterval: 25000 },
+  { key: "FREERTOS_HEAP_FREE", label: "Free Heap", pollInterval: 5000 },
+  { key: "FREERTOS_HEAP_MIN", label: "Min Heap", pollInterval: 20000 },
 ];
 
 function formatValue(key, raw) {
