@@ -492,42 +492,46 @@
       </div>
 
       <div class="gauges">
-        <Gauge
-          label="Temperature"
-          unit={tempUi.unit}
-          theme="temp"
-          min={tempUi.gaugeMin}
-          max={tempUi.gaugeMax}
-          value={tempUi.tempDisplay}
-          setpoint={tempUi.setTempDisplay}
-          setpointBand={tempUi.bandDisplay}
-          debugForceNeedles={debugForceGaugeNeedles}
-        >
-          <div class="gauge-controls">
-            <input
-              type="number"
-              bind:value={temperature}
-              placeholder={`Set (${tempUi.unit})`}
-              disabled={!readyGreen}
-              on:keydown={(e) => {
-                if (e.key === "Enter") setTemperature();
-              }}
-            />
-            <button on:click={setTemperature} disabled={!readyGreen}>Set</button>
-          </div>
-        </Gauge>
+        <div class="box">
+          <Gauge
+            label="Temperature"
+            unit={tempUi.unit}
+            theme="temp"
+            min={tempUi.gaugeMin}
+            max={tempUi.gaugeMax}
+            value={tempUi.tempDisplay}
+            setpoint={tempUi.setTempDisplay}
+            setpointBand={tempUi.bandDisplay}
+            debugForceNeedles={debugForceGaugeNeedles}
+          >
+            <div class="gauge-controls">
+              <input
+                type="number"
+                bind:value={temperature}
+                placeholder={`Set (${tempUi.unit})`}
+                disabled={!readyGreen}
+                on:keydown={(e) => {
+                  if (e.key === "Enter") setTemperature();
+                }}
+              />
+              <button on:click={setTemperature} disabled={!readyGreen}>Set</button>
+            </div>
+          </Gauge>
+        </div>
 
-        <Gauge
-          label="Humidity"
-          unit="%"
-          theme="rh"
-          min={0}
-          max={100}
-          value={telemetry?.RH}
-          setpoint={telemetry?.SET_RH}
-          setpointZone="under"
-          debugForceNeedles={debugForceGaugeNeedles}
-        />
+        <div class="box">
+          <Gauge
+            label="Humidity"
+            unit="%"
+            theme="rh"
+            min={0}
+            max={100}
+            value={telemetry?.RH}
+            setpoint={telemetry?.SET_RH}
+            setpointZone="under"
+            debugForceNeedles={debugForceGaugeNeedles}
+          />
+        </div>
       </div>
 
       <div class="box status-panel">
@@ -553,15 +557,17 @@
         />
       </div>
 
-      <Gauge
-        label="Power"
-        unit="W"
-        theme="power"
-        min={0}
-        max={1600}
-        value={telemetry?.POWER}
-        debugForceNeedles={debugForceGaugeNeedles}
-      />
+      <div class="box">
+        <Gauge
+          label="Power"
+          unit="W"
+          theme="power"
+          min={0}
+          max={1600}
+          value={telemetry?.POWER}
+          debugForceNeedles={debugForceGaugeNeedles}
+        />
+      </div>
     </div>
 
     {#if !isKiosk}

@@ -26,14 +26,12 @@
   $: vForNeedle = v === null && debugForceNeedles ? debugCurrent : v;
   $: spForNeedle = sp === null && debugForceNeedles ? debugSetpoint : sp;
 
-  const SWEEP_DEFAULT_START = -90;
-  const SWEEP_DEFAULT_END = 90;
-  const SWEEP_POWER_START = -110;
-  const SWEEP_POWER_END = 110;
+  // Sweep for gauegs
+  const SWEEP_START = -110;
+  const SWEEP_END = 110;
 
-  // Needle sweep: default -90..+90, power gauge -120..+120
-  $: sweepStart = theme === "power" ? SWEEP_POWER_START : SWEEP_DEFAULT_START;
-  $: sweepEnd = theme === "power" ? SWEEP_POWER_END : SWEEP_DEFAULT_END;
+  $: sweepStart = SWEEP_START;
+  $: sweepEnd = SWEEP_END;
 
   const angleFor = (n, start, end) => {
     if (n === null) return null;
@@ -47,8 +45,8 @@
 
   const CX = 100;
   const CY = 100;
-  const ARC_RADIUS = 80;
-  const TRACK_WIDTH = 40; // requested 40px path thickness
+  const ARC_RADIUS = 76;
+  const TRACK_WIDTH = 32;
 
   const pointFor = (angleDeg, radius) => {
     const rad = (Math.PI / 180) * angleDeg;
@@ -181,10 +179,9 @@
   .gauge {
     display: flex;
     flex-direction: column;
-    border: 1px solid #ccc;
-    padding: 8px;
     width: 240px;
     box-sizing: border-box;
+    padding-top: 10px; /* give clear breathing room from top of box */
   }
   .title {
     font-weight: 600;
@@ -198,13 +195,13 @@
   .arc {
     fill: none;
     stroke: #888;
-    stroke-width: 40;
+    stroke-width: 32;
     stroke-linecap: butt;
   }
   .setpoint-zone {
     fill: none;
     stroke: rgba(255, 211, 77, 0.35);
-    stroke-width: 40;
+    stroke-width: 32;
     stroke-linecap: butt;
   }
   .setpoint-center {
@@ -220,17 +217,17 @@
   }
   .power-band {
     fill: none;
-    stroke-width: 40;
+    stroke-width: 32;
     stroke-linecap: butt;
   }
   .power-band.green {
-    stroke: #34c759;
+    stroke: #8dd38d;
   }
   .power-band.yellow {
-    stroke: #ffd60a;
+    stroke: #ffea81;
   }
   .power-band.red {
-    stroke: #ff3b30;
+    stroke: #ff6d65;
   }
   .needle {
     stroke-linecap: round;

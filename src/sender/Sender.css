@@ -276,6 +276,11 @@ select:disabled {
   min-width: 0;
 }
 
+/* could apply to all boxes :P */
+.graph-row > .box {
+  margin-top: 14px;
+}
+
 @media (max-width: 1100px) {
   .graph-row {
     flex-wrap: wrap;
