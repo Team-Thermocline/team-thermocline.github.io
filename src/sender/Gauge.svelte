@@ -1,7 +1,7 @@
 <script>
   export let label = "";
   export let unit = "";
-  export let theme = "temp"; // "temp" | "rh"
+  export let theme = "temp"; // "temp" | "rh" | "power"
   export let min = 0;
   export let max = 100;
   export let value = null; // current
@@ -26,16 +26,24 @@
   $: vForNeedle = v === null && debugForceNeedles ? debugCurrent : v;
   $: spForNeedle = sp === null && debugForceNeedles ? debugSetpoint : sp;
 
-  // Needle sweep: -90 (left) -> +90 (right), base needle points "up"
-  const angleFor = (n) => {
+  const SWEEP_DEFAULT_START = -90;
+  const SWEEP_DEFAULT_END = 90;
+  const SWEEP_POWER_START = -110;
+  const SWEEP_POWER_END = 110;
+
+  // Needle sweep: default -90..+90, power gauge -120..+120
+  $: sweepStart = theme === "power" ? SWEEP_POWER_START : SWEEP_DEFAULT_START;
+  $: sweepEnd = theme === "power" ? SWEEP_POWER_END : SWEEP_DEFAULT_END;
+
+  const angleFor = (n, start, end) => {
     if (n === null) return null;
     if (max === min) return 0;
     const t = clamp01((n - min) / (max - min));
-    return -90 + t * 180;
+    return start + t * (end - start);
   };
 
-  $: valueAngle = angleFor(vForNeedle);
-  $: setpointAngle = angleFor(spForNeedle);
+  $: valueAngle = angleFor(vForNeedle, sweepStart, sweepEnd);
+  $: setpointAngle = angleFor(spForNeedle, sweepStart, sweepEnd);
 
   const CX = 100;
   const CY = 100;
@@ -59,7 +67,7 @@
     return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${end.x} ${end.y}`;
   };
 
-  $: fullArc = arcD(-90, 90);
+  $: fullArc = arcD(sweepStart, sweepEnd);
 
   $: zoneLowValue =
     spForNeedle === null
@@ -73,8 +81,8 @@
       : setpointZone === "under"
         ? clamp(spForNeedle, min, max)
         : clamp(spForNeedle + setpointBand, min, max);
-  $: zoneStartAngle = zoneLowValue === null ? null : angleFor(zoneLowValue);
-  $: zoneEndAngle = zoneHighValue === null ? null : angleFor(zoneHighValue);
+  $: zoneStartAngle = zoneLowValue === null ? null : angleFor(zoneLowValue, sweepStart, sweepEnd);
+  $: zoneEndAngle = zoneHighValue === null ? null : angleFor(zoneHighValue, sweepStart, sweepEnd);
   $: zoneArc =
     zoneStartAngle === null || zoneEndAngle === null ? null : arcD(zoneStartAngle, zoneEndAngle);
 
@@ -89,6 +97,20 @@
   $: outerR = ARC_RADIUS + TRACK_WIDTH / 2;
   $: setpointInner = setpointAngle === null ? null : pointFor(setpointAngle, innerR);
   $: setpointOuter = setpointAngle === null ? null : pointFor(setpointAngle, outerR);
+
+  // Power gauge colored bands (0-800 green, 800-1200 yellow, 1200-1600 red)
+  const arcForValues = (lo, hi) =>
+    arcD(
+      angleFor(lo, sweepStart, sweepEnd),
+      angleFor(hi, sweepStart, sweepEnd)
+    );
+
+  $: powerGreenArc =
+    theme === "power" ? arcForValues(0, 800) : null;
+  $: powerYellowArc =
+    theme === "power" ? arcForValues(800, 1200) : null;
+  $: powerRedArc =
+    theme === "power" ? arcForValues(1200, 1600) : null;
 </script>
 
 <div class={`gauge theme-${theme}`}>
@@ -97,18 +119,30 @@
     <!-- track -->
     <path d={fullArc} class="arc" />
 
-    <!-- setpoint band (zone) -->
-    {#if zoneArc}
-      <path d={zoneArc} class="setpoint-zone" class:in-zone={inZone} />
-      {#if setpointInner && setpointOuter}
-        <line
-          x1={setpointInner.x}
-          y1={setpointInner.y}
-          x2={setpointOuter.x}
-          y2={setpointOuter.y}
-          class="setpoint-center"
-          class:in-zone={inZone}
-        />
+    {#if theme === "power"}
+      {#if powerGreenArc}
+        <path d={powerGreenArc} class="power-band green" />
+      {/if}
+      {#if powerYellowArc}
+        <path d={powerYellowArc} class="power-band yellow" />
+      {/if}
+      {#if powerRedArc}
+        <path d={powerRedArc} class="power-band red" />
+      {/if}
+    {:else}
+      <!-- setpoint band (zone) -->
+      {#if zoneArc}
+        <path d={zoneArc} class="setpoint-zone" class:in-zone={inZone} />
+        {#if setpointInner && setpointOuter}
+          <line
+            x1={setpointInner.x}
+            y1={setpointInner.y}
+            x2={setpointOuter.x}
+            y2={setpointOuter.y}
+            class="setpoint-center"
+            class:in-zone={inZone}
+          />
+        {/if}
       {/if}
     {/if}
 
@@ -183,6 +217,20 @@
   }
   .setpoint-center.in-zone {
     stroke: #78ff78;
+  }
+  .power-band {
+    fill: none;
+    stroke-width: 40;
+    stroke-linecap: butt;
+  }
+  .power-band.green {
+    stroke: #34c759;
+  }
+  .power-band.yellow {
+    stroke: #ffd60a;
+  }
+  .power-band.red {
+    stroke: #ff3b30;
   }
   .needle {
     stroke-linecap: round;

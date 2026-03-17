@@ -539,16 +539,28 @@
       </div>
     </div>
 
-    <div class="box graph">
-      <Graph
-        samples={samples}
-        showFahrenheit={showFahrenheit}
-        telemetry={telemetry}
-        lastPolledByKey={lastPolledByKey}
-        sendTcode={sendTcode}
-        queryIntervalMs={queryIntervalMs}
-        setQueryIntervalMs={setQueryIntervalMs}
-        isKiosk={isKiosk}
+    <div class="graph-row">
+      <div class="box graph">
+        <Graph
+          samples={samples}
+          showFahrenheit={showFahrenheit}
+          telemetry={telemetry}
+          lastPolledByKey={lastPolledByKey}
+          sendTcode={sendTcode}
+          queryIntervalMs={queryIntervalMs}
+          setQueryIntervalMs={setQueryIntervalMs}
+          isKiosk={isKiosk}
+        />
+      </div>
+
+      <Gauge
+        label="Power"
+        unit="W"
+        theme="power"
+        min={0}
+        max={1600}
+        value={telemetry?.POWER}
+        debugForceNeedles={debugForceGaugeNeedles}
       />
     </div>
 
