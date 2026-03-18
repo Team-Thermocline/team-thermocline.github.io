@@ -46,6 +46,22 @@ export function buildQueryCommand() {
 }
 
 /**
+ * Construct a machine command packet.
+ * @returns {string}
+ */
+export function buildM0Command() {
+  return withChecksum("M0");
+}
+
+/**
+ * Construct a reset command packet.
+ * @returns {string}
+ */
+export function buildM2Command() {
+  return withChecksum("M2");
+}
+
+/**
  * Validate a received tcode packet by checking its checksum
  * @param {string} packet - The received packet
  * @returns {boolean} - True if checksum is valid

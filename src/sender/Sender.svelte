@@ -1,7 +1,7 @@
 <script>
   import { afterUpdate } from "svelte";
   import "./Sender.css";
-  import { buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
+  import { buildM0Command, buildM2Command, buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
   import { createSerialConnection } from "./serial.js";
   import { fToC, getTempUiModel } from "./temp.js";
@@ -38,6 +38,8 @@
   let lastConnectionError = null;
   let hasReceivedGoodRx = false;
   let TEST_MODE = false;
+  let isUserInputAllowed = false;
+  let serialConnected = false;
   let q1BuildDone = false;
   let q1BuilderDone = false;
   let q1BuildDateDone = false;
@@ -212,7 +214,7 @@
   }
 
   $: statusStates = computeStatusStates({
-    serialConnected: serial.connected,
+    serialConnected,
     hasReceivedGoodRx,
     lastConnectionError,
     commandQueueLength,
@@ -224,6 +226,8 @@
   });
   // Either green is ready state! 
   $: readyGreen = statusStates?.ready === "green" || statusStates?.ready === "blink-green";
+  // Allow user input when connected (or when test mode is enabled)
+  $: isUserInputAllowed = serialConnected || TEST_MODE;
 
   async function handleStatusActivate(key) {
     if (key === "connection") {
@@ -291,6 +295,7 @@
     q1BuildDone = false;
     q1BuilderDone = false;
     q1BuildDateDone = false;
+    serialConnected = false;
     addLog("Requesting serial port...", "info");
 
     const success = await serial.connect(baudRate, handleSerialData, (err) => {
@@ -318,6 +323,7 @@
         }
       );
       addLog(`Connected at ${baudRate} baud`, "success");
+      serialConnected = true;
       startQueryPolling();
       runQ1StartupQueries();
     } else {
@@ -364,6 +370,7 @@
     commandQueueLength = 0;
     lastConnectionError = null;
     hasReceivedGoodRx = false;
+    serialConnected = false;
     pendingQ0 = 0;
     pendingQ0StartedAt = 0;
     dirtyWarningShown = false;
@@ -393,6 +400,14 @@
   }
 
   async function sendManual() {
+    if (!isUserInputAllowed) {
+      addLog("Input not allowed", "error");
+      return;
+    }
+    if (!serial.connected) {
+      addLog("Not connected", "error");
+      return;
+    }
     const cmd = (manualCommand ?? "").trim();
     if (!cmd) return;
     await sendTcode(cmd);
@@ -400,8 +415,12 @@
   }
 
   async function setTemperature() {
-    if (!readyGreen) {
-      addLog("Not ready", "error");
+    if (!isUserInputAllowed) {
+      addLog("Input not allowed", "error");
+      return;
+    }
+    if (!serial.connected) {
+      addLog("Not connected", "error");
       return;
     }
 
@@ -428,6 +447,34 @@
     } catch {
       addLog("Q1 startup queries failed", "error");
     }
+  }
+
+  function stopModes() {
+    if (!isUserInputAllowed) {
+      addLog("Input not allowed", "error");
+      return;
+    }
+    if (!serial.connected) {
+      addLog("Not connected", "error");
+      return;
+    }
+    
+    // Send M0 to stop the machine
+    sendTcode(buildM0Command());
+  }
+
+  async function resetModes() {
+    if (!isUserInputAllowed) {
+      addLog("Input not allowed", "error");
+      return;
+    }
+    if (!serial.connected) {
+      addLog("Not connected", "error");
+      return;
+    }
+    
+    // Send M2 to reset the machine
+    sendTcode(buildM2Command());
   }
 </script>
 
@@ -513,12 +560,12 @@
                 type="number"
                 bind:value={temperature}
                 placeholder={`Set (${tempUi.unit})`}
-                disabled={!readyGreen}
+                disabled={!isUserInputAllowed}
                 on:keydown={(e) => {
                   if (e.key === "Enter") setTemperature();
                 }}
               />
-              <button on:click={setTemperature} disabled={!readyGreen}>Set</button>
+              <button on:click={setTemperature} disabled={!isUserInputAllowed}>Set</button>
             </div>
           </Gauge>
         </div>
@@ -573,7 +620,24 @@
             debugForceNeedles={debugForceGaugeNeedles}
           />
         </div>
-        <div class="box mode-controls"></div>
+        <div class="box mode-controls">
+          <div class="button-row">
+            <button
+              on:click={stopModes}
+              disabled={!isUserInputAllowed}
+              title="Set controller mode to STANDBY"
+            >
+              STOP
+            </button>
+            <button
+              on:click={resetModes}
+              disabled={!isUserInputAllowed}
+              title="Tell the controller to reboot itself"
+            >
+              CONTROLLER RESET
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -604,12 +668,12 @@
             class="manual"
             placeholder="Type a command and press Enter (e.g. Q0*61)"
             bind:value={manualCommand}
-            disabled={!readyGreen}
+            disabled={!isUserInputAllowed}
             on:keydown={(e) => {
               if (e.key === "Enter") sendManual();
             }}
           />
-          <button on:click={sendManual} disabled={!readyGreen}>Send</button>
+          <button on:click={sendManual} disabled={!isUserInputAllowed}>Send</button>
         </div>
       </div>
     </div>
