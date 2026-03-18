@@ -561,16 +561,19 @@
         />
       </div>
 
-      <div class="box">
-        <Gauge
-          label="Power"
-          unit="W"
-          theme="power"
-          min={0}
-          max={1600}
-          value={telemetry?.POWER}
-          debugForceNeedles={debugForceGaugeNeedles}
-        />
+      <div class="power-stack">
+        <div class="box">
+          <Gauge
+            label="Power"
+            unit="W"
+            theme="power"
+            min={0}
+            max={1600}
+            value={telemetry?.POWER}
+            debugForceNeedles={debugForceGaugeNeedles}
+          />
+        </div>
+        <div class="box mode-controls"></div>
       </div>
     </div>
 

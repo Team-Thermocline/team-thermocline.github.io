@@ -164,10 +164,12 @@
       <span class="k">cur</span>
       <span class="v">{v === null ? "--" : v}{unit}</span>
     </div>
-    <div class="row set">
-      <span class="k">set</span>
-      <span class="v">{sp === null ? "--" : sp}{unit}</span>
-    </div>
+    {#if theme !== "power"} <!-- gate and dont show setpoint for power gauge -->
+      <div class="row set">
+        <span class="k">set</span>
+        <span class="v">{sp === null ? "--" : sp}{unit}</span>
+      </div>
+    {/if}
   </div>
 
   <div class="controls">
