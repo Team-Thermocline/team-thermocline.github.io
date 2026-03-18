@@ -234,6 +234,10 @@
     if (key === "test") {
       TEST_MODE = !TEST_MODE;
       showWarning("WARNING: Test mode is now " + (TEST_MODE ? "ON" : "OFF")); // Shows you the test warning
+      return;
+    }
+    if (key === "fault") {
+      showWarning("Not implemented yet! Sorry!");
     }
   }
 
@@ -537,7 +541,7 @@
       <div class="box status-panel">
         <StatusGrid
           states={statusStates}
-          clickableKeys={["connection", "test"]}
+          clickableKeys={["connection", "fault", "test"]}
           onCellActivate={handleStatusActivate}
         />
       </div>

@@ -11,6 +11,11 @@
 
   const normalizeState = (s) => (s ?? "off").toString().trim().toLowerCase();
   const isClickable = (key) => Array.isArray(clickableKeys) && clickableKeys.includes(key);
+  const helpByKey = {
+    connection: "Connect/disconnect the controller.",
+    test: "Toggle test mode on/off.",
+    fault: "Clear current faults.",
+  };
 
   function activate(key) {
     if (!isClickable(key)) return;
@@ -21,13 +26,15 @@
 <div class="status-grid">
   {#each cells as cell (cell.key)}
     {@const state = normalizeState(states?.[cell.key])}
+    {@const help = helpByKey[cell.key] ?? null}
     {#if isClickable(cell.key)}
       <button
         type="button"
-        class="status-cell"
+        class="status-cell onclicked"
         data-key={cell.key}
         data-state={state}
         data-clickable="true"
+        title={help ?? ""}
         on:click={() => activate(cell.key)}
       >
         {cell.label}
