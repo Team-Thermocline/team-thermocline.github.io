@@ -28,7 +28,7 @@ const DEBUG_KEYS = [
 ];
 
 function formatValue(key, raw) {
-  if (raw == null || raw === "") return "—";
+  if (raw == null || raw === "") return "...";
   if (key === "BUILD_DATE" && typeof raw === "number" && Number.isFinite(raw)) {
     return new Date(raw * 1000).toLocaleString();
   }
@@ -52,11 +52,11 @@ function formatValue(key, raw) {
 function formatPollInterval(pi) {
   if (pi === "on_connect") return "On connect";
   if (typeof pi === "number" && pi > 0) return pi >= 1000 ? `${pi / 1000} s` : `${pi} ms`;
-  return "—";
+  return "...";
 }
 
 function formatLastPolled(ts) {
-  if (ts == null || typeof ts !== "number" || !Number.isFinite(ts)) return "—";
+  if (ts == null || typeof ts !== "number" || !Number.isFinite(ts)) return "...";
   const d = new Date(ts);
   const now = Date.now();
   const sec = Math.round((now - ts) / 1000);
@@ -75,7 +75,7 @@ export function getDebugRows(telemetry, lastPolledByKey = {}) {
     return DEBUG_KEYS.map(({ key, label, pollInterval }) => ({
       key,
       label,
-      value: "—",
+      value: "...",
       pollInterval: formatPollInterval(pollInterval),
       lastPolled: formatLastPolled(lastPolledByKey[key]),
     }));

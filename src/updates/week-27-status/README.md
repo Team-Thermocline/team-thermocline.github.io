@@ -8,7 +8,7 @@ EG-499 Capstone Design, Team Thermocline weekly status report.
 
 ## Completed This Week
 
-- **Weekly Meeting (3-26-26; Thursday)** — Assembly work and project tasks discussion
+- **Weekly Meeting (3-26-26; Thursday)** - Assembly work and project tasks discussion
 
 **Nik (Project Engineer):**
 

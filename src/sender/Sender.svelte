@@ -531,13 +531,13 @@
                   {buildVersion}
                 </a>
               {:else}
-                —
+                N/A
               {/if}
             </span>
             <span class="build-info-label">Builder</span>
-            <span class="build-info-value">{builderName ?? "—"}</span>
+            <span class="build-info-value">{builderName ?? "N/A"}</span>
             <span class="build-info-label">Build date</span>
-            <span class="build-info-value">{buildDateText ?? "—"}</span>
+            <span class="build-info-value">{buildDateText ?? "N/A"}</span>
           </div>
         </div>
       </div>
