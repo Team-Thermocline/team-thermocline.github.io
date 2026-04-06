@@ -2,7 +2,7 @@
   import 'digit-spinner/dist/index.js';
   
   // Countdown timer
-  const targetTimestamp = 1777068000; // April 24, 6pm
+  const targetTimestamp = 1776974400; // April 23, 4pm
   let days = 0;
   let hours = 0;
   let minutes = 0;
