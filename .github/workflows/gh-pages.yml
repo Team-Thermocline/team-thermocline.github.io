@@ -27,6 +27,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Sphinx and LaTeX (for docs PDF)
+        run: |
+          pip install -r docs/requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y latexmk texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+
       - name: Install dependencies
         run: npm ci
 

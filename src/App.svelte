@@ -163,7 +163,10 @@
   <div class="edge-strip"></div>
 </header>
 
-<main class={effectivePage === "sender" ? "container-wide" : "container"} class:main-home={effectivePage === "home"}>
+<main
+  class={effectivePage === "sender" || effectivePage === "docs" ? "container-wide" : "container"}
+  class:main-home={effectivePage === "home"}
+>
   {#if effectivePage === "home"}
     <div class="home-wrapper">
       <div class="home-content">

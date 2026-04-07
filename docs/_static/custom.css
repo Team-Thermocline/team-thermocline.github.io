@@ -1,0 +1,179 @@
+:root {
+  --tt-bg: #0a0a0b;
+  --tt-edge: #0e0e10;
+  --tt-text: #e6e6e6;
+  --tt-muted: #b7c0ca;
+  --tt-blue-900: #0b2747;
+  --tt-blue-700: #123a6b;
+  --tt-blue-500: #1f5fa8;
+  --tt-red-600: #c62828;
+}
+
+html,
+body {
+  background-color: var(--tt-bg) !important;
+  color: var(--tt-text) !important;
+}
+
+div.body {
+  background-color: var(--tt-bg) !important;
+  color: var(--tt-text) !important;
+}
+
+div.body > .section,
+div.body p,
+div.body li,
+div.body td,
+div.body th {
+  color: var(--tt-text) !important;
+}
+
+div.document,
+div.documentwrapper,
+div.bodywrapper,
+div.sphinxsidebar {
+  background-color: transparent !important;
+  color: var(--tt-text) !important;
+}
+
+div.footer {
+  background-color: transparent !important;
+  color: var(--tt-muted) !important;
+}
+
+div.footer a {
+  color: var(--tt-blue-500) !important;
+}
+
+div.footer a:hover {
+  color: var(--tt-red-600) !important;
+}
+
+div.sphinxsidebar h3,
+div.sphinxsidebar h4 {
+  color: var(--tt-text) !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+div.sphinxsidebar h3 a {
+  color: var(--tt-blue-500) !important;
+}
+
+div.sphinxsidebar p {
+  color: var(--tt-muted) !important;
+}
+
+div.sphinxsidebar ul {
+  color: var(--tt-text) !important;
+}
+
+div.sphinxsidebar a {
+  color: var(--tt-blue-500) !important;
+  border-bottom-color: rgba(31, 95, 168, 0.5) !important;
+}
+
+div.sphinxsidebar a:hover {
+  color: var(--tt-red-600) !important;
+  border-bottom-color: var(--tt-red-600) !important;
+}
+
+div.sphinxsidebar input {
+  background-color: var(--tt-edge) !important;
+  border-color: var(--tt-blue-500) !important;
+  color: var(--tt-text) !important;
+}
+
+div.sphinxsidebar,
+div.sphinxsidebarwrapper {
+  border: 0 !important;
+}
+
+div.sphinxsidebar hr {
+  background: rgba(230, 230, 230, 0.2) !important;
+  color: rgba(230, 230, 230, 0.2) !important;
+}
+
+div.body h1,
+div.body h2,
+div.body h3,
+div.body h4,
+div.body h5,
+div.body h6 {
+  color: var(--tt-text) !important;
+}
+
+div.body a.headerlink {
+  color: var(--tt-muted) !important;
+}
+
+div.body a.headerlink:hover {
+  color: var(--tt-red-600) !important;
+}
+
+a,
+a:visited {
+  color: var(--tt-blue-500) !important;
+}
+
+a:hover,
+a:focus {
+  color: var(--tt-red-600) !important;
+}
+
+pre,
+code,
+tt {
+  background-color: var(--tt-edge) !important;
+  color: var(--tt-text) !important;
+  border: 0 !important;
+}
+
+div.highlight {
+  background-color: var(--tt-edge) !important;
+  border: 0 !important;
+}
+
+table.docutils,
+table.docutils td,
+table.docutils th {
+  border-color: rgba(230, 230, 230, 0.15) !important;
+}
+
+div.admonition,
+div.note,
+div.warning,
+div.tip {
+  background: rgba(18, 58, 107, 0.15) !important;
+  border-left: 4px solid var(--tt-blue-500) !important;
+}
+
+hr {
+  border-color: rgba(230, 230, 230, 0.2) !important;
+}
+
+@media screen and (max-width: 1100px) {
+  div.documentwrapper {
+    background-color: var(--tt-bg) !important;
+  }
+
+  div.sphinxsidebar {
+    background-color: var(--tt-blue-900) !important;
+    color: var(--tt-text) !important;
+  }
+
+  div.sphinxsidebar h3,
+  div.sphinxsidebar h4,
+  div.sphinxsidebar p,
+  div.sphinxsidebar h3 a {
+    color: var(--tt-text) !important;
+  }
+
+  div.sphinxsidebar a {
+    color: var(--tt-blue-500) !important;
+  }
+
+  div.sphinxsidebar a:hover {
+    color: var(--tt-red-600) !important;
+  }
+}

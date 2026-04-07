@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "python tools/build_bundles.py && vite build && node tools/generate-rss.js",
+    "docs:pdf": "python tools/build_docs_pdf.py",
+    "docs:build": "python -m sphinx -b html docs static/docs",
+    "build": "python tools/build_bundles.py && npm run docs:build && npm run docs:pdf && vite build && node tools/generate-rss.js",
     "build:bundles": "python tools/build_bundles.py",
     "new-update": "python tools/new_update.py",
     "update-sch": "node tools/update-sch.js",
