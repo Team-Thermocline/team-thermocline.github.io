@@ -29,7 +29,7 @@
     },
     {
       title: "Photo Album",
-      href: "https://photos.app.goo.gl/TsxRDsSTB1DSMw6X6",
+      href: "https://photos.google.com/share/AF1QipN5t9A_6PNaoRJ17JOjYEKFbv0uV5bw1ODZwkMjSba-olt65rTJzqaehpMs2j25pw?key=NlRyVkw2MEQ4V2prRE03M1dSRzVDaW9QelNVUEN3",
       blurb: "Photos of the build, testing, development and team activities!",
       imageUrl: "/previews/photos.png"
     }
