@@ -13,4 +13,4 @@ View PCB
 --------
 
 * `Click here to View Layout <https://kicanvas.org/?repo=https://github.com/Team-Thermocline/Controller/blob/v1.0/Hardware/Main-Board/Main-Board.kicad_pcb>`_
-(PCB rendered and hosted on KiCanvas! There may be visual bugs, for best browsing experience view the PCB directly in KiCAD!)
+  (PCB rendered and hosted on KiCanvas! There may be visual bugs; for best browsing experience view the PCB directly in KiCad!)

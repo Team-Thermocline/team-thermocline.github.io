@@ -8,3 +8,7 @@ dist/
 
 # Bundles
 bundle.zip
+
+# Sphinx (generated during npm build)
+docs/_build/
+static/docs/
