@@ -221,7 +221,7 @@
             {#each debugRows as row (row.key)}
               <tr>
                 <td>{row.label}</td>
-                <td>{row.value}</td>
+                <td class={row.valueClass}>{row.value}</td>
                 <td>{row.pollInterval}</td>
                 <td>{row.lastPolled}</td>
               </tr>
@@ -330,6 +330,12 @@
   .debug-table th {
     color: #888;
     font-weight: 600;
+  }
+  .debug-table td.debug-value-nominal {
+    color: #6bcf7f;
+  }
+  .debug-table td.debug-value-warn {
+    color: #d9b84d;
   }
   .plot-wrap {
     width: 100%;
