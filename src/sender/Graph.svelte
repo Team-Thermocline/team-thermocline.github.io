@@ -3,9 +3,10 @@
   import "uplot/dist/uPlot.min.css";
   import { onDestroy, onMount } from "svelte";
   import { cToF } from "./temp.js";
-  import { getDebugRows, createDebugPoller } from "./DebugTable.js";
+  import { getDebugRows, createDebugPoller, TDR_TEMPERATURE_ENTRIES } from "./DebugTable.js";
 
-  export let samples = []; // [{ t: number(ms), tempC: number, setTempC: number|null, rh: number }]
+  export let samples = []; // [{ t: number(ms), tempC: number, setTempC: number|null, rh: number, tdrC?: (number|null)[] }]
+  export let recordAllTdrTemps = false;
   export let showFahrenheit = false;
   export let telemetry = null;
   export let lastPolledByKey = {};
@@ -45,19 +46,28 @@
 
   // CSV export --joe
   function downloadCsv() {
-    const rows = [["timestamp_iso", "elapsed_s", "temp_c", "set_temp_c", "rh"]];
-    if (!samples.length) rows.push([new Date().toISOString(), "0", "", ""]);
+    const hasTdr = samples.some((s) => Array.isArray(s.tdrC));
+    const tdrHeaders = hasTdr ? TDR_TEMPERATURE_ENTRIES.map((e) => e.key.toLowerCase()) : [];
+    const rows = [["timestamp_iso", "elapsed_s", "temp_c", "set_temp_c", "rh", ...tdrHeaders]];
+    if (!samples.length) {
+      const pad = hasTdr ? tdrHeaders.map(() => "") : [];
+      rows.push([new Date().toISOString(), "0", "", "", "", ...pad]);
+    }
     const t0 = samples[0]?.t ?? Date.now();
 
     for (const s of samples) {
       const iso = new Date(s.t).toISOString();
       const elapsed = ((s.t - t0) / 1000).toFixed(3);
+      const tdrCells =
+        hasTdr &&
+        TDR_TEMPERATURE_ENTRIES.map((_, i) => String(Array.isArray(s.tdrC) ? (s.tdrC[i] ?? "") : ""));
       rows.push([
         iso,
         elapsed,
         String(s.tempC ?? ""),
         String(s.setTempC ?? ""),
         String(s.rh ?? ""),
+        ...(hasTdr ? tdrCells : []),
       ]);
     }
 
@@ -79,14 +89,19 @@
     const temp = [];
     const setTemp = [];
     const rh = [];
+    const tdrYs = TDR_TEMPERATURE_ENTRIES.map(() => []);
     for (const s of samps) {
       if (!s || !isFiniteNum(s.t) || !isFiniteNum(s.tempC) || !isFiniteNum(s.rh)) continue;
       x.push(s.t / 1000);
       temp.push(showFahrenheit ? cToF(s.tempC) : s.tempC);
       setTemp.push(isFiniteNum(s.setTempC) ? (showFahrenheit ? cToF(s.setTempC) : s.setTempC) : null);
       rh.push(s.rh);
+      for (let i = 0; i < TDR_TEMPERATURE_ENTRIES.length; i++) {
+        const c = Array.isArray(s.tdrC) ? s.tdrC[i] : null;
+        tdrYs[i].push(isFiniteNum(c) ? (showFahrenheit ? cToF(c) : c) : null);
+      }
     }
-    return [x, temp, setTemp, rh];
+    return [x, temp, setTemp, rh, ...tdrYs];
   };
 
   const resize = () => {
@@ -107,7 +122,18 @@
       setTemp: css("--cyan-500", "#00ffff"),
       rh: css("--red-600", "#c62828"),
     };
+    const tdrColors = ["#e69138", "#b565d8", "#2ecc71", "#f4d03f"];
+    const tdrDash = [[4, 4], [2, 6], [8, 3], [1, 3]];
     const pointsOff = { show: false };
+    const tdrSeries = TDR_TEMPERATURE_ENTRIES.map((e, i) => ({
+      label: `${e.label.split(" ")[0]} (${tempUnit})`,
+      scale: "temp",
+      stroke: tdrColors[i % tdrColors.length],
+      width: 2,
+      dash: tdrDash[i % tdrDash.length],
+      points: pointsOff,
+      show: recordAllTdrTemps,
+    }));
     const opts = {
       width: 600,
       height: 260,
@@ -145,6 +171,7 @@
         { label: `Temp (${tempUnit})`, scale: "temp", stroke: COLORS.temp, width: 2, points: pointsOff },
         { label: `Set (${tempUnit})`, scale: "temp", stroke: COLORS.setTemp, width: 2, dash: [6, 4], points: pointsOff },
         { label: "RH (%)", scale: "rh", stroke: COLORS.rh, width: 2, points: pointsOff },
+        ...tdrSeries,
       ],
     };
 
@@ -166,10 +193,17 @@
 
   $: if (u) {
     // handle unit changes + data updates
+    const tu = showFahrenheit ? "°F" : "°C";
     u.setData(toUplotData(samples));
-    u.setSeries(1, { label: `Temp (${showFahrenheit ? "°F" : "°C"})` });
-    u.setSeries(2, { label: `Set (${showFahrenheit ? "°F" : "°C"})` });
-    u.axes[1].label = `Temp (${showFahrenheit ? "°F" : "°C"})`;
+    u.setSeries(1, { label: `Temp (${tu})` });
+    u.setSeries(2, { label: `Set (${tu})` });
+    u.axes[1].label = `Temp (${tu})`;
+    TDR_TEMPERATURE_ENTRIES.forEach((e, i) => {
+      u.setSeries(4 + i, {
+        label: `${e.label.split(" ")[0]} (${tu})`,
+        show: recordAllTdrTemps,
+      });
+    });
     resize();
   }
 </script>
@@ -192,7 +226,15 @@
           on:input={(e) => setQueryIntervalMs(e.target.value)}
         />
       </label>
-      <button type="button" class="debug-btn" on:click={() => (showDebugPopup = true)}>Show Debug Values</button>
+      <div class="graph-meta-debug">
+        {#if !isKiosk}
+        <label class="graph-meta-check">
+          <input type="checkbox" bind:checked={recordAllTdrTemps} />
+          Record all Machine Temps
+        </label>
+        {/if}
+        <button type="button" class="debug-btn" on:click={() => (showDebugPopup = true)}>Show Debug Values</button>
+      </div>
     </div>
   </div>
 
@@ -247,14 +289,34 @@
     justify-content: space-between;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
   .graph-meta {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: wrap;
     opacity: 0.75;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+  }
+  .graph-meta-debug {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .graph-meta-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #888;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .graph-meta-check input {
+    accent-color: #5a9fd4;
   }
   .update-speed-label {
     display: flex;
@@ -277,7 +339,7 @@
     border-color: #555;
   }
   .debug-btn {
-    margin-left: 8px;
+    flex-shrink: 0;
   }
   .debug-overlay {
     position: fixed;

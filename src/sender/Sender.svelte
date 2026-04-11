@@ -9,6 +9,7 @@
   import Gauge from "./Gauge.svelte";
   import StatusGrid from "./StatusGrid.svelte";
   import Graph from "./Graph.svelte";
+  import { TDR_TEMPERATURE_KEYS } from "./DebugTable.js";
   import { computeStatusStates } from "./statusGridState.js";
   import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
@@ -43,7 +44,9 @@
   let q1BuildDone = false;
   let q1BuilderDone = false;
   let q1BuildDateDone = false;
-  let samples = []; // [{ t, tempC, setTempC, rh }]
+  let samples = []; // [{ t, tempC, setTempC, rh, tdrC?: (number|null)[] }]
+  let recordAllTdrTemps = false;
+  let tdrPollInterval = null;
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -207,6 +210,12 @@
           setTempC: typeof setTempC === "number" && Number.isFinite(setTempC) ? setTempC : null,
           rh,
         };
+        if (recordAllTdrTemps) {
+          next.tdrC = TDR_TEMPERATURE_KEYS.map((k) => {
+            const v = telemetry[k];
+            return typeof v === "number" && Number.isFinite(v) ? v : null;
+          });
+        }
         samples = [...samples, next];
         if (samples.length > 50_000) samples = samples.slice(-50_000);
       }
@@ -274,6 +283,28 @@
     if (queryInterval) {
       clearInterval(queryInterval);
       queryInterval = null;
+    }
+  }
+
+  function stopTdrPoll() {
+    if (tdrPollInterval) {
+      clearInterval(tdrPollInterval);
+      tdrPollInterval = null;
+    }
+  }
+
+  /** Q1 TDR temperature keys at the same cadence as Q0 (graph update interval). */
+  $: {
+    stopTdrPoll();
+    if (serial.connected && recordAllTdrTemps) {
+      const ms = Math.max(100, Math.min(60000, Number(queryIntervalMs) || 1000));
+      const tick = () => {
+        for (const key of TDR_TEMPERATURE_KEYS) {
+          sendTcode(`Q1 ${key}`);
+        }
+      };
+      tick();
+      tdrPollInterval = setInterval(tick, ms);
     }
   }
 
@@ -366,6 +397,7 @@
 
   async function disconnect() {
     stopQueryPolling();
+    stopTdrPoll();
     commandQueue = null;
     commandQueueLength = 0;
     lastConnectionError = null;
@@ -597,6 +629,7 @@
     <div class="graph-row">
       <div class="box graph">
         <Graph
+          bind:recordAllTdrTemps
           samples={samples}
           showFahrenheit={showFahrenheit}
           telemetry={telemetry}

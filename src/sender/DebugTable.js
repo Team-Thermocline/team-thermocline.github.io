@@ -6,39 +6,11 @@
  * Poll interval: number (ms) or on_connect
  * Optional nominal check (green if true, yellow if false)
  */
-const DEBUG_KEYS = [
-  {
-    key: "BUILD",
-    label: "Build",
-    pollInterval: "on_connect",
-    nominalExpr: 'typeof v === "string" && !String(v).includes("-dirty")', // Build isn't dirty
-  },
-  {
-    key: "BUILDER",
-    label: "Builder",
-    pollInterval: "on_connect",
-  },
-  { key: "BUILD_DATE", label: "Build date", pollInterval: "on_connect" },
-  { key: "CT0_AMPS", 
-    label: "Heater Amps", 
-    pollInterval: 1000, 
-    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 10",
-  },
-  { key: "CT1_AMPS", 
-    label: "Compressor Amps", 
-    pollInterval: 1000, 
-    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 10",
-  },
-  { key: "CT2_AMPS", 
-    label: "External Fan Amps", 
-    pollInterval: 1000, 
-    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 5",
-  },
-  { key: "CT3_AMPS", 
-    label: "Internal Fan Amps", 
-    pollInterval: 1000,
-    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 1",
-  },
+
+/**
+ * TDR board temperature entries
+ */
+export const TDR_TEMPERATURE_ENTRIES = [
   {
     key: "TDR0_TEMPERATURE_C",
     label: "Heater Temperature (°C)",
@@ -63,10 +35,52 @@ const DEBUG_KEYS = [
     pollInterval: 5000,
     nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 15 && Number(v) < 25",
   },
+];
+
+export const TDR_TEMPERATURE_KEYS = TDR_TEMPERATURE_ENTRIES.map((e) => e.key);
+
+const DEBUG_KEYS = [
+  {
+    key: "BUILD",
+    label: "Build",
+    pollInterval: "on_connect",
+    nominalExpr: 'typeof v === "string" && !String(v).includes("-dirty")', // Build isn't dirty
+  },
+  {
+    key: "BUILDER",
+    label: "Builder",
+    pollInterval: "on_connect",
+  },
+  { key: "BUILD_DATE", label: "Build date", pollInterval: "on_connect" },
+  {
+    key: "CT0_AMPS",
+    label: "Heater Amps",
+    pollInterval: 1000,
+    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 10",
+  },
+  {
+    key: "CT1_AMPS",
+    label: "Compressor Amps",
+    pollInterval: 1000,
+    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 10",
+  },
+  {
+    key: "CT2_AMPS",
+    label: "External Fan Amps",
+    pollInterval: 1000,
+    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 5",
+  },
+  {
+    key: "CT3_AMPS",
+    label: "Internal Fan Amps",
+    pollInterval: 1000,
+    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 1",
+  },
+  ...TDR_TEMPERATURE_ENTRIES,
   { key: "STATE", label: "State", pollInterval: 10000 },
-  { 
+  {
     key: "FAULT",
-    label: "Fault", 
+    label: "Fault",
     pollInterval: 5000,
     nominalExpr: "v === 'NONE'",
   },
@@ -79,7 +93,7 @@ const DEBUG_KEYS = [
     nominalExpr: "Number.isFinite(Number(v)) && Number(v) !== 0.0",
   },
   { key: "SHT35_HUMIDITY", label: "SHT35 Humidity", pollInterval: 5000 },
-  { 
+  {
     key: "I2C_SCAN",
     label: "I2C Devices",
     pollInterval: 25000,
