@@ -164,7 +164,9 @@
   let bufferWarningShown = false;
   $: if (commandQueueLength >= MAX_QUEUE && !bufferWarningShown) {
     bufferWarningShown = true;
-    showWarning(`Command queue full (${MAX_QUEUE}). Stop sending or wait for device to catch up.`);
+    showWarning(
+      `Command queue saturated (${MAX_QUEUE}). Oldest pending commands may be dropped until the device catches up.`
+    );
   }
 
   // For debug table polling
@@ -313,6 +315,7 @@
     try {
       await commandQueue.send(command);
     } catch (err) {
+      if (err?.dropped) return;
       if ((err?.message || "").toLowerCase().includes("device has been lost")) {
         lastConnectionError = err?.message || String(err);
       }
