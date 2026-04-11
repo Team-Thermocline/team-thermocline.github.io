@@ -53,6 +53,12 @@ const DEBUG_KEYS = [
   },
   { key: "BUILD_DATE", label: "Build date", pollInterval: "on_connect" },
   {
+    key: "FREERTOS_CPU_LOAD_PCT",
+    label: "CPU Load",
+    pollInterval: 750,
+    nominalExpr: "Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 80",
+  },
+  {
     key: "CT0_AMPS",
     label: "Heater Amps",
     pollInterval: 1000,
