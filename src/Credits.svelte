@@ -9,7 +9,7 @@
     {
       title: "Faculty",
       entries: [
-        { name: "Professor McInnis", role: "Capstone" },
+        { name: "Professor McInnis", role: "Instructor" },
         { name: "Professor Monk", role: "Project Sponsor" },
         { name: "John Vincent", role: "IDEA Lab Director and Reviewer" },
         { name: "Dr. Ruben Del-Rio-Ruiz", role: "Engineering Lab Facilitator and Reviewer" },
@@ -28,13 +28,17 @@
       { name: "Matthew MacDonald", role: "Software Collaborator" },
       { name: "Jimmy Small", role: "EPA Certified" },
     ]},
+    { title: "Others", 
+    entries: [
+      { name: "r/embeddeded", role: "Community PCB Design Review" },
+      { name: "Gary", role: "Materials Donation" },
+    ]},
     {
       title: "Manufacturers",
       entries: [
         { name: "SendCutSend", role: "Manufacturing" },
         { name: "JLCPCB", role: "Manufacturing" },
-        { name: "LCSC", role: "Supplier" },
-        { name: "Cohen Steel", role: "Supplier" },
+        { name: "LCSC", role: "Parts Supplier" },
       ],
     },
   ];
