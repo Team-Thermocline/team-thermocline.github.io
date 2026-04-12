@@ -1,8 +1,14 @@
 export const cToF = (c) => (c * 9) / 5 + 32;
 export const fToC = (f) => ((f - 32) * 5) / 9;
 
-export const finiteOrNull = (n) =>
-  typeof n === "number" && Number.isFinite(n) ? n : null;
+export const finiteOrNull = (n) => {
+  if (typeof n === "number" && Number.isFinite(n)) return n;
+  if (typeof n === "string" && n.trim() !== "") {
+    const v = Number(n);
+    return Number.isFinite(v) ? v : null;
+  }
+  return null;
+};
 
 /**
  * Build a UI gauge model

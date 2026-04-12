@@ -14,7 +14,15 @@
   export let debugForceNeedles = false;
 
   const clamp01 = (n) => Math.max(0, Math.min(1, n));
-  const toNumberOrNull = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  /** Accept finite numbers or numeric strings (some telemetry paths only coerce in data: lines). */
+  const toNumberOrNull = (v) => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (typeof v === "string" && v.trim() !== "") {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+    return null;
+  };
   const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
   $: v = toNumberOrNull(value);
@@ -270,15 +278,16 @@
     margin-top: auto;
   }
 
+  /* Fallbacks: Sender/Electron bundle often does not load global styles.css (:root palette). */
   .gauge {
-    --cur-color: var(--blue-500);
-    --set-color: var(--cyan-500);
+    --cur-color: var(--blue-500, #1f5fa8);
+    --set-color: var(--cyan-500, #00bcd4);
     --needle-color: var(--cur-color);
   }
 
   .gauge.theme-rh {
-    --cur-color: var(--red-600);
-    --set-color: var(--cyan-500);
+    --cur-color: var(--red-600, #c62828);
+    --set-color: var(--cyan-500, #00bcd4);
     --needle-color: var(--cur-color);
   }
 </style>
