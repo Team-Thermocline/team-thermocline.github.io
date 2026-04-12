@@ -9,6 +9,7 @@
   import Gauge from "./Gauge.svelte";
   import StatusGrid from "./StatusGrid.svelte";
   import Graph from "./Graph.svelte";
+  import KioskNumpad from "./KioskNumpad.svelte";
   import { TDR_TEMPERATURE_KEYS } from "./DebugTable.js";
   import { computeStatusStates } from "./statusGridState.js";
   import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
@@ -31,6 +32,7 @@
   let commandQueueLength = 0; // Length of the command queue
   let telemetry = null;
   let manualCommand = "";
+  let tempNumpadOpen = false;
 
   // UI and Terminal state vars
   let terminalEl = null;
@@ -474,6 +476,12 @@
     }
   }
 
+  async function onTempNumpadDone(e) {
+    temperature = e.detail.value;
+    tempNumpadOpen = false;
+    await setTemperature();
+  }
+
   async function runQ1StartupQueries() {
     try {
       await sendTcode("Q1 BUILD");
@@ -591,15 +599,30 @@
             debugForceNeedles={debugForceGaugeNeedles}
           >
             <div class="gauge-controls">
-              <input
-                type="number"
-                bind:value={temperature}
-                placeholder={`Set (${tempUi.unit})`}
-                disabled={!isUserInputAllowed}
-                on:keydown={(e) => {
-                  if (e.key === "Enter") setTemperature();
-                }}
-              />
+              {#if isKiosk}
+                <button
+                  type="button"
+                  class="kiosk-temp-btn"
+                  disabled={!isUserInputAllowed}
+                  on:click={() => {
+                    if (isUserInputAllowed) tempNumpadOpen = true;
+                  }}
+                >
+                  {temperature !== "" && temperature != null
+                    ? `${temperature} ${tempUi.unit}`
+                    : `Set (${tempUi.unit})`}
+                </button>
+              {:else}
+                <input
+                  type="number"
+                  bind:value={temperature}
+                  placeholder={`Set (${tempUi.unit})`}
+                  disabled={!isUserInputAllowed}
+                  on:keydown={(e) => {
+                    if (e.key === "Enter") setTemperature();
+                  }}
+                />
+              {/if}
               <button on:click={setTemperature} disabled={!isUserInputAllowed}>Set</button>
             </div>
           </Gauge>
@@ -715,4 +738,14 @@
     </div>
     {/if}
   </div>
+
+  <KioskNumpad
+    bind:open={tempNumpadOpen}
+    title={`Set temperature (${tempUi.unit})`}
+    initialValue={temperature}
+    allowDecimal={true}
+    allowNegative={true}
+    on:done={onTempNumpadDone}
+    on:cancel={() => (tempNumpadOpen = false)}
+  />
 </div>

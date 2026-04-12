@@ -3,6 +3,7 @@
   import "uplot/dist/uPlot.min.css";
   import { onDestroy, onMount } from "svelte";
   import { cToF } from "./temp.js";
+  import KioskNumpad from "./KioskNumpad.svelte";
   import { getDebugRows, createDebugPoller, TDR_TEMPERATURE_ENTRIES } from "./DebugTable.js";
 
   export let samples = []; // [{ t: number(ms), tempC: number, setTempC: number|null, rh: number, tdrC?: (number|null)[] }]
@@ -14,6 +15,20 @@
   export let queryIntervalMs = 1000;
   export let setQueryIntervalMs = () => {};
   export let isKiosk = false;
+
+  /** Kiosk chart: hide TDR0–3 (heater, evaporator, compressor, ambient). */
+  $: tdrGraphEntries = isKiosk ? [] : TDR_TEMPERATURE_ENTRIES;
+
+  let msNumpadOpen = false;
+
+  function onMsNumpadDone(e) {
+    const raw = parseFloat(e.detail.value);
+    const n = Number.isFinite(raw) ? Math.round(raw) : 1000;
+    const clamped = Math.max(100, Math.min(60000, n));
+    const rounded = Math.round(clamped / 50) * 50;
+    setQueryIntervalMs(String(rounded));
+    msNumpadOpen = false;
+  }
 
   let showDebugPopup = false;
   let debugPopupWasOpen = false;
@@ -83,26 +98,26 @@
     URL.revokeObjectURL(url);
   }
 
-  const toUplotData = (samps) => {
+  function toUplotData(samps) {
     // x axis uses seconds since epoch
     const x = [];
     const temp = [];
     const setTemp = [];
     const rh = [];
-    const tdrYs = TDR_TEMPERATURE_ENTRIES.map(() => []);
+    const tdrYs = tdrGraphEntries.map(() => []);
     for (const s of samps) {
       if (!s || !isFiniteNum(s.t) || !isFiniteNum(s.tempC) || !isFiniteNum(s.rh)) continue;
       x.push(s.t / 1000);
       temp.push(showFahrenheit ? cToF(s.tempC) : s.tempC);
       setTemp.push(isFiniteNum(s.setTempC) ? (showFahrenheit ? cToF(s.setTempC) : s.setTempC) : null);
       rh.push(s.rh);
-      for (let i = 0; i < TDR_TEMPERATURE_ENTRIES.length; i++) {
+      for (let i = 0; i < tdrGraphEntries.length; i++) {
         const c = Array.isArray(s.tdrC) ? s.tdrC[i] : null;
         tdrYs[i].push(isFiniteNum(c) ? (showFahrenheit ? cToF(c) : c) : null);
       }
     }
     return [x, temp, setTemp, rh, ...tdrYs];
-  };
+  }
 
   const resize = () => {
     if (!u || !rootEl) return;
@@ -125,7 +140,7 @@
     const tdrColors = ["#e69138", "#b565d8", "#2ecc71", "#f4d03f"];
     const tdrDash = [[4, 4], [2, 6], [8, 3], [1, 3]];
     const pointsOff = { show: false };
-    const tdrSeries = TDR_TEMPERATURE_ENTRIES.map((e, i) => ({
+    const tdrSeries = tdrGraphEntries.map((e, i) => ({
       label: `${e.label.split(" ")[0]} (${tempUnit})`,
       scale: "temp",
       stroke: tdrColors[i % tdrColors.length],
@@ -198,7 +213,7 @@
     u.setSeries(1, { label: `Temp (${tu})` });
     u.setSeries(2, { label: `Set (${tu})` });
     u.axes[1].label = `Temp (${tu})`;
-    TDR_TEMPERATURE_ENTRIES.forEach((e, i) => {
+    tdrGraphEntries.forEach((e, i) => {
       u.setSeries(4 + i, {
         label: `${e.label.split(" ")[0]} (${tu})`,
         show: recordAllTdrTemps,
@@ -216,15 +231,25 @@
     <div class="graph-meta">
       <label class="update-speed-label">
         Update (ms)
-        <input
-          type="number"
-          class="update-speed-input"
-          min="100"
-          max="60000"
-          step="50"
-          value={queryIntervalMs}
-          on:input={(e) => setQueryIntervalMs(e.target.value)}
-        />
+        {#if isKiosk}
+          <button
+            type="button"
+            class="update-speed-input kiosk-ms-btn"
+            on:click={() => (msNumpadOpen = true)}
+          >
+            {queryIntervalMs}
+          </button>
+        {:else}
+          <input
+            type="number"
+            class="update-speed-input"
+            min="100"
+            max="60000"
+            step="50"
+            value={queryIntervalMs}
+            on:input={(e) => setQueryIntervalMs(e.target.value)}
+          />
+        {/if}
       </label>
       <div class="graph-meta-debug">
         {#if !isKiosk}
@@ -277,6 +302,16 @@
   <div class="plot-wrap" bind:this={rootEl}>
     <div class="plot" bind:this={plotEl}></div>
   </div>
+
+  <KioskNumpad
+    bind:open={msNumpadOpen}
+    title="Update interval (ms)"
+    initialValue={String(queryIntervalMs)}
+    allowDecimal={false}
+    allowNegative={false}
+    on:done={onMsNumpadDone}
+    on:cancel={() => (msNumpadOpen = false)}
+  />
 </div>
 
 <style>
@@ -337,6 +372,10 @@
   .update-speed-input:focus {
     outline: none;
     border-color: #555;
+  }
+  button.kiosk-ms-btn.update-speed-input {
+    cursor: pointer;
+    text-align: center;
   }
   .debug-btn {
     flex-shrink: 0;

@@ -145,6 +145,25 @@ select:disabled {
   width: auto;
 }
 
+.gauge-controls .kiosk-temp-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #3a3a3a;
+  background: #1e1e22;
+  color: #e0e0e6;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.gauge-controls .kiosk-temp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .status-panel {
   flex: 1 1 0;
   min-width: 0;
