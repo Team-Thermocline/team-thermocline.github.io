@@ -1,5 +1,5 @@
 <script>
-  import { afterUpdate } from "svelte";
+  import { afterUpdate, onMount, onDestroy } from "svelte";
   import "./Sender.css";
   import { buildM0Command, buildM2Command, buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
   import { createLineProcessor, parseTelemetryLine } from "./rx.js";
@@ -64,6 +64,10 @@
   let TEST_MODE = false;
   let isUserInputAllowed = false;
   let serialConnected = false;
+  /** Main process opened /dev/ttyAMA*; Web Serial `serial.connected` stays false. */
+  let electronSerialBridged = false;
+  let electronPollTimer = null;
+  $: serialLinkUp = serial.connected || electronSerialBridged;
   let q1BuildDone = false;
   let q1BuilderDone = false;
   let q1BuildDateDone = false;
@@ -275,7 +279,7 @@
 
   async function handleStatusActivate(key) {
     if (key === "connection") {
-      if (serial.connected) await disconnect();
+      if (serialLinkUp) await disconnect();
       else await connect();
       return;
     }
@@ -319,7 +323,7 @@
       Math.min(Q0_QUERY_INTERVAL_MAX_MS, Math.round(Number(ms)) || DEFAULT_Q0_QUERY_INTERVAL_MS)
     );
     queryIntervalMs = val;
-    if (serial.connected) startQueryPolling();
+    if (serialLinkUp) startQueryPolling();
   }
 
   function stopQueryPolling() {
@@ -392,7 +396,7 @@
   /** Q1 TDR temperature keys at the same cadence as Q0 (graph update interval). */
   $: {
     stopTdrPoll();
-    if (serial.connected && recordAllTdrTemps) {
+    if (serialLinkUp && recordAllTdrTemps) {
       const ms = Math.max(
         Q0_QUERY_INTERVAL_MIN_MS,
         Math.min(Q0_QUERY_INTERVAL_MAX_MS, Number(queryIntervalMs) || DEFAULT_Q0_QUERY_INTERVAL_MS)
@@ -408,7 +412,7 @@
   }
 
   async function sendTcode(command) {
-    if (!serial.connected || !commandQueue) return;
+    if (!serialLinkUp || !commandQueue) return;
     try {
       await commandQueue.send(command);
     } catch (err) {
@@ -420,6 +424,45 @@
     }
   }
 
+  function finalizeElectronSerialSession(portPath) {
+    if (typeof window === "undefined" || !window.electronSerial) return;
+    if (electronSerialBridged) return;
+
+    lastConnectionError = null;
+    hasReceivedGoodRx = false;
+    q1BuildDone = false;
+    q1BuilderDone = false;
+    q1BuildDateDone = false;
+    lineProcessor.reset();
+    commandQueueLength = 0;
+    commandQueue = createCommandQueue(
+      (cmd) => window.electronSerial.write(cmd).then((r) => r?.success === true),
+      {
+        onSend(cmd) {
+          if (isQ0Command(cmd)) {
+            pendingQ0 = 1;
+            pendingQ0StartedAt = Date.now();
+          }
+          if (!showUpdates && isQ0Command(cmd)) upsertCollapsedQ0();
+          else addLog(`TX: ${cmd}`, "tx");
+        },
+        onQueueChange(n) {
+          commandQueueLength = n;
+        },
+      },
+    );
+    const pathNote = portPath ? ` on ${portPath}` : "";
+    addLog(`Connected (Electron)${pathNote} at ${baudRate} baud`, "success");
+    serialConnected = true;
+    electronSerialBridged = true;
+    startQueryPolling();
+    runQ1StartupQueries();
+    if (electronPollTimer != null) {
+      clearInterval(electronPollTimer);
+      electronPollTimer = null;
+    }
+  }
+
   async function connect() {
     lastConnectionError = null;
     hasReceivedGoodRx = false;
@@ -427,7 +470,18 @@
     q1BuilderDone = false;
     q1BuildDateDone = false;
     serialConnected = false;
+    electronSerialBridged = false;
     addLog("Requesting serial port...", "info");
+
+    if (typeof window !== "undefined" && window.electronSerial) {
+      const r = await window.electronSerial.connect(baudRate);
+      if (r?.success) {
+        finalizeElectronSerialSession(r.port);
+        return;
+      }
+      addLog(r?.error ?? "Electron serial connect failed", "error");
+      return;
+    }
 
     const success = await serial.connect(baudRate, handleSerialData, (err) => {
       addLog(`Connection error: ${err}`, "error");
@@ -507,12 +561,16 @@
     lastConnectionError = null;
     hasReceivedGoodRx = false;
     serialConnected = false;
+    if (electronSerialBridged && typeof window !== "undefined" && window.electronSerial) {
+      await window.electronSerial.disconnect();
+    }
+    electronSerialBridged = false;
+    await serial.disconnect();
     pendingQ0 = 0;
     pendingQ0StartedAt = 0;
     dirtyWarningShown = false;
     bufferWarningShown = false;
     lastFaultWarned = null;
-    await serial.disconnect();
     addLog("Disconnected", "info");
   }
 
@@ -542,7 +600,7 @@
       addLog("Input not allowed", "error");
       return;
     }
-    if (!serial.connected) {
+    if (!serialLinkUp) {
       addLog("Not connected", "error");
       return;
     }
@@ -557,7 +615,7 @@
       addLog("Input not allowed", "error");
       return;
     }
-    if (!serial.connected) {
+    if (!serialLinkUp) {
       addLog("Not connected", "error");
       return;
     }
@@ -598,7 +656,7 @@
       addLog("Input not allowed", "error");
       return;
     }
-    if (!serial.connected) {
+    if (!serialLinkUp) {
       addLog("Not connected", "error");
       return;
     }
@@ -612,7 +670,7 @@
       addLog("Input not allowed", "error");
       return;
     }
-    if (!serial.connected) {
+    if (!serialLinkUp) {
       addLog("Not connected", "error");
       return;
     }
@@ -620,6 +678,43 @@
     // Send M2 to reset the machine
     sendTcode(buildM2Command());
   }
+
+  onMount(() => {
+    if (typeof window === "undefined" || !window.electronSerial) return;
+
+    window.electronSerial.onData((data) => handleSerialData(data));
+    window.electronSerial.onError((err) => {
+      const msg = typeof err === "string" ? err : String(err);
+      lastConnectionError = msg;
+      addLog(`Serial error: ${msg}`, "error");
+    });
+    window.electronSerial.onAutoConnected((portPath) => finalizeElectronSerialSession(portPath));
+
+    const tick = async () => {
+      try {
+        if (await window.electronSerial.isConnected()) {
+          finalizeElectronSerialSession(null);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    tick();
+    electronPollTimer = setInterval(tick, 400);
+    setTimeout(() => {
+      if (electronPollTimer != null) {
+        clearInterval(electronPollTimer);
+        electronPollTimer = null;
+      }
+    }, 20000);
+  });
+
+  onDestroy(() => {
+    if (electronPollTimer != null) {
+      clearInterval(electronPollTimer);
+      electronPollTimer = null;
+    }
+  });
 </script>
 
 <Music bind:this={musicAlerts} telemetry={telemetry} enabled={audioAlertsEnabled} />
@@ -633,7 +728,7 @@
         <div class="field">
           <label>
             Baud Rate
-            <select bind:value={baudRate} disabled={serial.connected}>
+            <select bind:value={baudRate} disabled={serialLinkUp}>
               {#each baudRates as rate}
                 <option value={rate}>{rate}</option>
               {/each}
@@ -642,7 +737,7 @@
         </div>
 
         <div class="button-row">
-          {#if !serial.connected}
+          {#if !serialLinkUp}
             <button on:click={connect}>Connect</button>
           {:else}
             <button on:click={disconnect}>Disconnect</button>
