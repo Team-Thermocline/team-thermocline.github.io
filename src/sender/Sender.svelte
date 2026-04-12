@@ -15,6 +15,7 @@
   import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
   import { hasElectronSerial } from "../lib/kiosk.js";
+  import Music from "../Music.svelte";
 
   export let kioskMode = false;
   $: isKiosk = kioskMode || hasElectronSerial();
@@ -25,6 +26,8 @@
   let temperature = "";
   let showKeepalives = false;
   let showUpdates = false;
+  let audioAlertsEnabled = true;
+  let musicAlerts;
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
   let queryIntervalMs = 1000; // Time between Q0 queries in milliseconds
@@ -249,7 +252,9 @@
       return;
     }
     if (key === "test") {
+      const turningOn = !TEST_MODE;
       TEST_MODE = !TEST_MODE;
+      if (turningOn) musicAlerts?.playTestModeFault?.();
       showWarning("WARNING: Test mode is now " + (TEST_MODE ? "ON" : "OFF")); // Shows you the test warning
       return;
     }
@@ -521,6 +526,8 @@
   }
 </script>
 
+<Music bind:this={musicAlerts} telemetry={telemetry} enabled={audioAlertsEnabled} />
+
 <div class="sender" class:kiosk={isKiosk}>
   <div class="content">
       <div class="top-row">
@@ -559,6 +566,10 @@
           <label>
             <input type="checkbox" bind:checked={showUpdates} />
             Show updates (Q0 ...)
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={audioAlertsEnabled} />
+            Play audio alerts
           </label>
 
           <div class="build-info">
