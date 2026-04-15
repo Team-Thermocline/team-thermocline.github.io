@@ -23,7 +23,8 @@ How to Use This Documentation
    :caption: Click on a section to jump to it
 
    starthere
-   main-board
+   service-mechanical
+   service-electronics
 
 We reccomend reading the documentation in order, starting with Start Here.
 
