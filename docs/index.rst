@@ -1,5 +1,5 @@
-Team Thermocline Index
-======================
+Introduction
+============
 
 Thank you for reading our documentation!
 
@@ -9,27 +9,27 @@ at our `github repository <https://github.com/Team-Thermocline/team-thermocline.
 If you have any questions or something isn't detailed enough in here, you can try reaching out to us! (Even though by
 the time you read this, we will have graduated.)
 
-Contacts
---------
+**Contacts:**
 
-- Joe Sedutto: `joe@kitsunehosting.net <mailto:joe@kitsunehosting.net>`_
++-------------+-----------------------------------------------------------+
+|    Name     |                           Email                           |
++=============+===========================================================+
+| Joe Sedutto | `joe@kitsunehosting.net <mailto:joe@kitsunehosting.net>`_ |
++-------------+-----------------------------------------------------------+
+
+We reccomend reading the documentation in order, starting with :doc:`starthere`.
 
 
-How to Use This Documentation
------------------------------
+| We hope our capstone project can be useful to you!
+| — Team Thermocline
 
 .. toctree::
    :maxdepth: 2
-   :caption: Click on a section to jump to it
 
    starthere
    service-mechanical
    service-electronics
 
-We reccomend reading the documentation in order, starting with Start Here.
 
-
-| We hope our capstone project can be useful to you!
-| — Team Thermocline
 
 

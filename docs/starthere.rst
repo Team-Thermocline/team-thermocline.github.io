@@ -1,8 +1,9 @@
+**********
 Start Here
-==========
+**********
 
 Moving the Chamber
-------------------
+==================
 
 .. image:: images/FrontOverview.png
 
@@ -13,7 +14,7 @@ at Southern New Hampshire University (SNHU).
 The Chamber is 22" by 31" and weighs about 90lb. When lifting the chamber, please use at least a *two person lift*.
 
 Powering the Chamber on
------------------------
+=======================
 
 The chamber is powered by an IEC cable connected to a recepticale on the right side of the machine (when facing the front).
 Please note the chamber is fused for 15A.
@@ -29,7 +30,7 @@ should boot almost imedietly after power is applied, and should turn on the cham
 
 
 Connecting to the Chamber
---------------------------
+==========================
 
 For better controls, enhanced monitoring and data export, you may connect the chamber
 to a personal laptop using the USB-C port on the front of the machine.

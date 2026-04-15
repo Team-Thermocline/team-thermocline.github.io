@@ -1,6 +1,7 @@
 project = "Team Thermocline"
 copyright = "2026, Team Thermocline"
-author = "Team Thermocline"
+# Cheat to inject LaTeX line breaks
+author = "Alexandra Friebolin, Jacob Morrissette, Nik DiLullo, Joe Sedutto, Alexia Hnatowicz".replace(", ", "\\\\\n")
 
 extensions = []
 
@@ -28,3 +29,15 @@ html_theme_options = {
     "head_font_family": "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial",
 }
 
+# Logo on the docs front page
+latex_logo = "images/ThermoclineLogo.png"
+
+# Avoid blank pages in PDF output
+latex_elements = {
+    "classoptions": ",oneside,openany",
+}
+
+# Set some custom title stuff
+latex_documents = [
+    (root_doc, "teamthermocline.tex", "Chamber Operator and Service Manual", author, "manual"),
+]
