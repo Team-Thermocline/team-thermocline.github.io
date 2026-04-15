@@ -36,7 +36,12 @@ jobs:
         run: |
           pip install -r docs/requirements.txt
           sudo apt-get update
-          sudo apt-get install -y latexmk texlive-latex-recommended texlive-fonts-recommended texlive-latex-extra
+          sudo apt-get install -y \
+            latexmk \
+            texlive-latex-recommended \
+            texlive-fonts-recommended \
+            texlive-latex-extra \
+            qpdf
 
       - name: Install dependencies
         run: npm ci

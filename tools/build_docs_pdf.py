@@ -47,10 +47,10 @@ def merge_pdfs(out_path: Path, appendix_pdfs: list[Path]) -> bool:
         return False
 
     print(
-        "warning: could not append appendix PDFs (need pdftk or qpdf installed)",
+        "error: appendix PDFs exist but neither pdftk nor qpdf is installed; cannot merge",
         file=sys.stderr,
     )
-    return True
+    return False
 
 
 def main() -> int:
