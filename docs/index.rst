@@ -22,10 +22,10 @@ How to Use This Documentation
    :maxdepth: 2
    :caption: Click on a section to jump to it
 
-   overview
+   starthere
    main-board
 
-We reccomend reading the documentation in order, starting with the overview.
+We reccomend reading the documentation in order, starting with Start Here.
 
 
 | We hope our capstone project can be useful to you!

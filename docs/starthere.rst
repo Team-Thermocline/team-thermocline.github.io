@@ -1,5 +1,8 @@
-Project Overview
-================
+Start Here
+==========
+
+Moving the Chamber
+------------------
 
 .. image:: images/FrontOverview.png
 
@@ -23,3 +26,13 @@ should boot almost imedietly after power is applied, and should turn on the cham
 *The pi 5 may take one or two minutes to boot.*
 
 .. image:: images/BehindOverview.png
+
+
+Connecting to the Chamber
+--------------------------
+
+For better controls, enhanced monitoring and data export, you may connect the chamber
+to a personal laptop using the USB-C port on the front of the machine.
+
+.. figure:: images/FrontOverview.png
+
