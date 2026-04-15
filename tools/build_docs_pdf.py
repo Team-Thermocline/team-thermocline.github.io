@@ -11,6 +11,46 @@ DOCS = ROOT / "docs"
 BUILD = DOCS / "_build"
 LATEX_DIR = BUILD / "latex"
 OUT = ROOT / "static" / "docs" / "latest.pdf"
+APPENDICES_DIR = DOCS / "Appendicies"
+
+
+def merge_pdfs(out_path: Path, appendix_pdfs: list[Path]) -> bool:
+    """
+    Merge OUT + appendix PDFs into OUT.
+    Prefers system tools to avoid extra Python deps.
+    """
+    if not appendix_pdfs:
+        return True
+
+    pdftk = shutil.which("pdftk")
+    qpdf = shutil.which("qpdf")
+
+    tmp = out_path.with_suffix(".merged.tmp.pdf")
+    inputs = [str(out_path), *map(str, appendix_pdfs)]
+
+    if pdftk:
+        # pdftk A B cat output out.pdf
+        cmd = [pdftk, *inputs, "cat", "output", str(tmp)]
+        proc = subprocess.run(cmd, cwd=ROOT)
+        if proc.returncode == 0 and tmp.exists():
+            tmp.replace(out_path)
+            return True
+        return False
+
+    if qpdf:
+        # qpdf --empty --pages A B -- out.pdf
+        cmd = [qpdf, "--empty", "--pages", *inputs, "--", str(tmp)]
+        proc = subprocess.run(cmd, cwd=ROOT)
+        if proc.returncode == 0 and tmp.exists():
+            tmp.replace(out_path)
+            return True
+        return False
+
+    print(
+        "warning: could not append appendix PDFs (need pdftk or qpdf installed)",
+        file=sys.stderr,
+    )
+    return True
 
 
 def main() -> int:
@@ -35,6 +75,15 @@ def main() -> int:
     pdf = max(pdfs, key=lambda p: p.stat().st_mtime)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(pdf, OUT)
+
+    # Optionally append any PDFs in docs/Appendicies/ to the end of the generated PDF.
+    if APPENDICES_DIR.exists():
+        appendix_pdfs = sorted(APPENDICES_DIR.glob("*.pdf"))
+        if appendix_pdfs:
+            ok = merge_pdfs(OUT, appendix_pdfs)
+            if not ok:
+                return 1
+
     print(f"{pdf.relative_to(ROOT)} -> {OUT.relative_to(ROOT)}")
     return 0
 
