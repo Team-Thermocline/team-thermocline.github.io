@@ -9,6 +9,6 @@ dist/
 # Bundles
 bundle.zip
 
-# Sphinx (generated during npm build)
+# Sphinx HTML + built PDF
 docs/_build/
-static/docs/
+static/sphinx

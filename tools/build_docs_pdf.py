@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 BUILD = DOCS / "_build"
 LATEX_DIR = BUILD / "latex"
-OUT = ROOT / "static" / "docs" / "latest.pdf"
+OUT = ROOT / "static" / "sphinx" / "latest.pdf"
 APPENDICES_DIR = DOCS / "Appendicies"
 
 

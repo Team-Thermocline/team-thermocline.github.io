@@ -7,11 +7,12 @@
   import Timeline from "./Timeline.svelte";
   import Game from "./game/Game.svelte";
   import { isKioskUrl } from "./lib/kiosk.js";
+  import { docsPathnameToSphinxRel } from "./lib/docsUrl.js";
 
   const navItems = [
-    { label: "Home", href: "#home", page: "home" },
-    { label: "Docs", href: "#docs", page: "docs" },
-    { label: "Sender", href: "#sender", page: "sender" },
+    { label: "Home", href: "/#home", page: "home" },
+    { label: "Docs", href: "/docs/", page: "docs" },
+    { label: "Sender", href: "/#sender", page: "sender" },
   ];
   const updates = loadUpdates();
   const projectResources = [
@@ -36,6 +37,8 @@
   ];
   let active = null;
   let currentPage = "home";
+  /** Sphinx HTML file served under /sphinx/ (URL bar uses /docs/...). */
+  let docsSphinxRelPath = "index.html";
   let isMobile = false;
 
   let kioskMode = typeof window !== "undefined" && isKioskUrl();
@@ -47,7 +50,7 @@
       isMobile = e.matches;
       if (isMobile && currentPage === "sender") {
         currentPage = "home";
-        window.location.hash = "home";
+        history.replaceState({ spa: true }, "", "/#home");
       }
     });
   }
@@ -55,29 +58,60 @@
   $: visibleNavItems = isMobile ? navItems.filter((i) => i.page !== "sender") : navItems;
   $: effectivePage = isMobile && currentPage === "sender" ? "home" : currentPage;
 
-  // Initialize from hash on page load
-  if (typeof window !== "undefined") {
+  function syncFromLocation() {
+    if (typeof window === "undefined") return;
+
+    if (window.location.hash === "#docs") {
+      history.replaceState({ spa: true }, "", "/docs/");
+    }
+
+    const path = window.location.pathname;
+    if (path === "/docs" || path.startsWith("/docs/")) {
+      currentPage = "docs";
+      docsSphinxRelPath = docsPathnameToSphinxRel(path);
+      active = null;
+      return;
+    }
+
     const hash = window.location.hash.slice(1);
     if (hash && ["home", "docs", "sender"].includes(hash)) {
-      currentPage = hash;
+      currentPage = isMobile && hash === "sender" ? "home" : hash;
       if (isMobile && hash === "sender") {
-        currentPage = "home";
-        window.location.hash = "home";
+        history.replaceState({ spa: true }, "", "/#home");
       }
+      active = null;
     } else if (hash && hash.startsWith("update:")) {
-      const slug = hash.slice(7); // Remove "update:" prefix
+      const slug = hash.slice(7);
       const update = updates.find((u) => u.slug === slug);
       if (update) {
         currentPage = "home";
         active = update;
       }
+    } else if (!hash && path === "/") {
+      currentPage = "home";
+      active = null;
     }
+  }
+
+  if (typeof window !== "undefined") {
+    syncFromLocation();
+    window.addEventListener("popstate", syncFromLocation);
+    window.addEventListener("thermo-docs-url", () => {
+      docsSphinxRelPath = docsPathnameToSphinxRel(window.location.pathname);
+    });
+    window.addEventListener("hashchange", () => {
+      if (window.location.pathname.startsWith("/docs")) return;
+      syncFromLocation();
+    });
   }
 
   function openUpdate(u) {
     active = u;
     currentPage = "home";
     if (typeof window !== "undefined") {
+      if (window.location.pathname.startsWith("/docs")) {
+        history.pushState({ spa: true }, "", "/");
+      }
       window.location.hash = `update:${u.slug}`;
     }
   }
@@ -88,36 +122,25 @@
     }
   }
   function navigate(page) {
-    if (page && !(isMobile && page === "sender")) {
-      currentPage = page;
-      active = null; // Close any open update when navigating
-      // Update URL hash
-      if (typeof window !== "undefined") {
-        window.location.hash = page;
-      }
-    }
-  }
+    if (!page || (isMobile && page === "sender")) return;
+    active = null;
+    if (typeof window === "undefined") return;
 
-  // Listen for hash changes (back/forward buttons)
-  if (typeof window !== "undefined") {
-    window.addEventListener("hashchange", () => {
-      const hash = window.location.hash.slice(1);
-      if (hash && ["home", "docs", "sender"].includes(hash)) {
-        currentPage = isMobile && hash === "sender" ? "home" : hash;
-        if (isMobile && hash === "sender") window.location.hash = "home";
-        active = null;
-      } else if (hash && hash.startsWith("update:")) {
-        const slug = hash.slice(7);
-        const update = updates.find((u) => u.slug === slug);
-        if (update) {
-          currentPage = "home";
-          active = update;
-        }
-      } else if (!hash) {
-        currentPage = "home";
-        active = null;
-      }
-    });
+    if (page === "docs") {
+      history.pushState({ spa: true }, "", "/docs/");
+      currentPage = "docs";
+      docsSphinxRelPath = "index.html";
+      return;
+    }
+    if (page === "home") {
+      history.pushState({ spa: true }, "", "/#home");
+      currentPage = "home";
+      return;
+    }
+    if (page === "sender") {
+      history.pushState({ spa: true }, "", "/#sender");
+      currentPage = "sender";
+    }
   }
 </script>
 
@@ -150,7 +173,7 @@
           class="nav-btn"
           href={item.href}
           rel="noopener noreferrer"
-          on:click={() => navigate(item.page)}>{item.label}</a
+          on:click|preventDefault={() => navigate(item.page)}>{item.label}</a
         >
       {/each}
       {#if !isMobile}
@@ -267,7 +290,7 @@
   {:else if effectivePage === "sender"}
     <Sender kioskMode={false} />
   {:else if effectivePage === "docs"}
-    <Docs />
+    <Docs sphinxRelPath={docsSphinxRelPath} />
   {/if}
 </main>
 

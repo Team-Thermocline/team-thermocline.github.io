@@ -1,5 +1,10 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -17,6 +22,16 @@ export default defineConfig({
                     }
                     next()
                 })
+            }
+        },
+        {
+            name: 'github-pages-spa-fallback',
+            closeBundle() {
+                const distIndex = path.resolve(__dirname, 'dist/index.html')
+                const dist404 = path.resolve(__dirname, 'dist/404.html')
+                if (fs.existsSync(distIndex)) {
+                    fs.copyFileSync(distIndex, dist404)
+                }
             }
         }
     ],

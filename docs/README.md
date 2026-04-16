@@ -1,6 +1,7 @@
 # Sphinx docs
 
-RST sources and `conf.py` live in this folder. The website embeds HTML from `static/docs/` 
+RST sources and `conf.py` live in this folder. The site serves the built HTML from `static/sphinx/`
+under the URL prefix `/sphinx/` while the browser URL for the framed manual stays under `/docs/…`
 (built by `npm run docs:build`, or full `npm run build`).
 
 ## Setup
