@@ -9,14 +9,6 @@ at our `github repository <https://github.com/Team-Thermocline/team-thermocline.
 If you have any questions or something isn't detailed enough in here, you can try reaching out to us! (Even though by
 the time you read this, we will have graduated.)
 
-**Contacts:**
-
-+-------------+-----------------------------------------------------------+
-|    Name     |                           Email                           |
-+=============+===========================================================+
-| Joe Sedutto | `joe@kitsunehosting.net <mailto:joe@kitsunehosting.net>`_ |
-+-------------+-----------------------------------------------------------+
-
 We reccomend reading the documentation in order, starting with :doc:`starthere`.
 
 
