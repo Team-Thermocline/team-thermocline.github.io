@@ -817,18 +817,20 @@
             <input type="checkbox" bind:checked={showFahrenheit} />
             Display °F
           </label>
-          <label>
-            <input type="checkbox" bind:checked={showKeepalives} />
-            Show keepalives (.)
-          </label>
-          <label>
-            <input type="checkbox" bind:checked={showUpdates} />
-            Show updates (Q0 ...)
-          </label>
-          <label>
-            <input type="checkbox" bind:checked={audioAlertsEnabled} />
-            Play audio alerts
-          </label>
+          {#if !isKiosk}
+            <label>
+              <input type="checkbox" bind:checked={showKeepalives} />
+              Show keepalives (.)
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={showUpdates} />
+              Show updates (Q0 ...)
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={audioAlertsEnabled} />
+              Play audio alerts
+            </label>
+          {/if}
 
           <div class="build-info">
             <span class="build-info-label">Build</span>

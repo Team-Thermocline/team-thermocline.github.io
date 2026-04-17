@@ -2,6 +2,8 @@
   import uPlot from "uplot";
   import "uplot/dist/uPlot.min.css";
   import { onDestroy, onMount } from "svelte";
+  import monkPng from "../../static/monk.png";
+  import senderQrPng from "../../static/sender-qr.png";
   import { cToF } from "./temp.js";
   import KioskNumpad from "./KioskNumpad.svelte";
   import { getDebugRows, createDebugPoller, TDR_TEMPERATURE_ENTRIES } from "./DebugTable.js";
@@ -30,6 +32,8 @@
     msNumpadOpen = false;
   }
 
+  const WEB_SENDER_QR_URL = "https://team-thermocline.github.io/#sender";
+
   let showDebugPopup = false;
   let debugPopupWasOpen = false;
   const debugPoller = createDebugPoller();
@@ -39,6 +43,47 @@
     else debugPoller.stop();
   }
   $: debugRows = getDebugRows(telemetry, lastPolledByKey);
+
+  let showQrPopup = false;
+  let qrShowMonk = false;
+  let qrTapCount = 0;
+  let qrTapTimer = null;
+
+  function clearQrTapTimer() {
+    if (qrTapTimer != null) {
+      clearTimeout(qrTapTimer);
+      qrTapTimer = null;
+    }
+  }
+
+  function openQrPopup() {
+    qrShowMonk = false;
+    qrTapCount = 0;
+    clearQrTapTimer();
+    showQrPopup = true;
+  }
+
+  function closeQrPopup() {
+    showQrPopup = false;
+    qrShowMonk = false;
+    qrTapCount = 0;
+    clearQrTapTimer();
+  }
+
+  /** Double-click or two quick taps (kiosk) toggles monk image. */
+  function onQrImageAreaClick() {
+    qrTapCount += 1;
+    clearQrTapTimer();
+    if (qrTapCount >= 2) {
+      qrShowMonk = !qrShowMonk;
+      qrTapCount = 0;
+      return;
+    }
+    qrTapTimer = setTimeout(() => {
+      qrTapCount = 0;
+      qrTapTimer = null;
+    }, 450);
+  }
 
   function escapeClose(node, closeFn) {
     if (typeof closeFn !== "function") return;
@@ -259,6 +304,7 @@
         </label>
         {/if}
         <button type="button" class="debug-btn" on:click={() => (showDebugPopup = true)}>Show Debug Values</button>
+        <button type="button" class="debug-btn" on:click={openQrPopup}>Show QR Code</button>
       </div>
     </div>
   </div>
@@ -295,6 +341,45 @@
             {/each}
           </tbody>
         </table>
+      </div>
+    </div>
+  {/if}
+
+  {#if showQrPopup}
+    <div
+      class="qr-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Web sender QR code"
+      use:escapeClose={closeQrPopup}>
+      <button type="button" class="qr-backdrop" aria-label="Close" on:click={closeQrPopup}></button>
+      <div class="qr-modal">
+        <div class="qr-modal-header">
+          <h3>Control the chamber from the webtool</h3>
+          <button type="button" on:click={closeQrPopup}>Close</button>
+        </div>
+        <p class="qr-url-line">
+          <a href={WEB_SENDER_QR_URL} target="_blank" rel="noopener noreferrer">{WEB_SENDER_QR_URL}</a>
+        </p>
+        <div
+          class="qr-image-hit"
+          role="button"
+          tabindex="0"
+          aria-label="QR code; double-tap or double-click to toggle image"
+          on:click={onQrImageAreaClick}
+          on:keydown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onQrImageAreaClick();
+            }
+          }}>
+          <img
+            src={qrShowMonk ? monkPng : senderQrPng}
+            alt={qrShowMonk ? "Monk" : "QR code for web sender"}
+            class="qr-popup-img"
+            draggable="false"
+          />
+        </div>
       </div>
     </div>
   {/if}
@@ -379,6 +464,78 @@
   }
   .debug-btn {
     flex-shrink: 0;
+  }
+  .qr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  .qr-backdrop {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.65);
+    cursor: pointer;
+  }
+  .qr-modal {
+    position: relative;
+    background: #1a1a1e;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 16px 18px 20px;
+    max-width: min(96vw, 560px);
+    max-height: 92vh;
+    overflow: auto;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+  }
+  .qr-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .qr-modal-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f0f0f5;
+    line-height: 1.35;
+  }
+  .qr-url-line {
+    margin: 0 0 14px;
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+  .qr-url-line a {
+    color: #7ec8ff;
+  }
+  .qr-image-hit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    border-radius: 8px;
+    outline: none;
+  }
+  .qr-image-hit:focus-visible {
+    box-shadow: 0 0 0 2px rgba(126, 200, 255, 0.6);
+  }
+  .qr-popup-img {
+    width: min(78vmin, 440px);
+    height: auto;
+    max-height: min(72vh, 520px);
+    object-fit: contain;
+    image-rendering: pixelated;
+    border-radius: 6px;
   }
   .debug-overlay {
     position: fixed;
