@@ -14,9 +14,23 @@
   import {
     computeStatusStates,
     isCoolFastOrSlowState,
+    isMonkTemperatureAlert,
     isStandbyOrHeatingState,
   } from "./statusGridState.js";
-  import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
+  import {
+    DEFAULT_Q0_QUERY_INTERVAL_MS,
+    DEFAULT_SERIAL_BAUD,
+    MAX_QUEUE,
+    PENDING_Q0_LINE_TIMEOUT_MS,
+    Q0_QUERY_INTERVAL_MAX_MS,
+    Q0_QUERY_INTERVAL_MIN_MS,
+    Q1_CT_STANDBY_HEAT_POLL_MS,
+    Q1_TDR1_COOL_POLL_MS,
+    SERIAL_BAUD_RATES,
+    SERIAL_LOG_MAX_LINES,
+    TEMP_GAUGE_BAND_C,
+  } from "./constants.js";
+  import { createCommandQueue } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
   import { hasElectronSerial } from "../lib/kiosk.js";
   import Music from "../Music.svelte";
@@ -25,7 +39,7 @@
   $: isKiosk = kioskMode || hasElectronSerial();
 
   let serial = createSerialConnection();
-  let baudRate = 115200;
+  let baudRate = DEFAULT_SERIAL_BAUD;
   let logs = [];
   let temperature = "";
   let showKeepalives = false;
@@ -34,7 +48,7 @@
   let musicAlerts;
   let lineProcessor = createLineProcessor();
   let queryInterval = null;
-  let queryIntervalMs = 1000; // Time between Q0 queries in milliseconds
+  let queryIntervalMs = DEFAULT_Q0_QUERY_INTERVAL_MS;
   let commandQueue = null;
   let commandQueueLength = 0; // Length of the command queue
   let telemetry = null;
@@ -63,17 +77,16 @@
   let ctStandbyHeatPollInterval = null;
   let ctStandbyHeatPollActive = false;
 
-  const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
     telemetry,
     showFahrenheit,
     minC: -50,
     maxC: 80,
-    bandC: TEMP_BAND_C,
+    bandC: TEMP_GAUGE_BAND_C,
   });
   $: debugForceGaugeNeedles = TEST_MODE;
 
-  const baudRates = [9600, 19200, 38400, 57600, 115200];
+  const baudRates = SERIAL_BAUD_RATES;
   const isKeepalive = (log) =>
     log?.type === "rx" && (log?.message || "").replace(/^RX:\s*/, "").trim() === ".";
 
@@ -110,7 +123,7 @@
         timestamp: ts,
       },
     ];
-    if (logs.length > 1000) logs = logs.slice(-1000);
+    if (logs.length > SERIAL_LOG_MAX_LINES) logs = logs.slice(-SERIAL_LOG_MAX_LINES);
   }
 
   const buildDisplayLogs = (allLogs) => {
@@ -242,6 +255,8 @@
     }
   }
 
+  $: monkStatusLabel = isMonkTemperatureAlert(telemetry) ? "MONK!" : "";
+
   $: statusStates = computeStatusStates({
     serialConnected,
     hasReceivedGoodRx,
@@ -289,14 +304,20 @@
 
   function startQueryPolling() {
     stopQueryPolling();
-    const ms = Math.max(100, Math.min(60000, Number(queryIntervalMs) || 1000));
+    const ms = Math.max(
+      Q0_QUERY_INTERVAL_MIN_MS,
+      Math.min(Q0_QUERY_INTERVAL_MAX_MS, Number(queryIntervalMs) || DEFAULT_Q0_QUERY_INTERVAL_MS)
+    );
     queryInterval = setInterval(() => {
       sendTcode(buildQueryCommand());
     }, ms);
   }
 
   function setQueryIntervalMs(ms) {
-    const val = Math.max(100, Math.min(60000, Math.round(Number(ms)) || 1000));
+    const val = Math.max(
+      Q0_QUERY_INTERVAL_MIN_MS,
+      Math.min(Q0_QUERY_INTERVAL_MAX_MS, Math.round(Number(ms)) || DEFAULT_Q0_QUERY_INTERVAL_MS)
+    );
     queryIntervalMs = val;
     if (serial.connected) startQueryPolling();
   }
@@ -338,7 +359,7 @@
       sendTcode("Q1 TDR1_TEMPERATURE_C");
     };
     tick();
-    tdr1CoolPollInterval = setInterval(tick, 20000);
+    tdr1CoolPollInterval = setInterval(tick, Q1_TDR1_COOL_POLL_MS);
   }
 
   function stopCtStandbyHeatPoll() {
@@ -365,14 +386,17 @@
       sendTcode("Q1 CT2_AMPS");
     };
     tick();
-    ctStandbyHeatPollInterval = setInterval(tick, 20000);
+    ctStandbyHeatPollInterval = setInterval(tick, Q1_CT_STANDBY_HEAT_POLL_MS);
   }
 
   /** Q1 TDR temperature keys at the same cadence as Q0 (graph update interval). */
   $: {
     stopTdrPoll();
     if (serial.connected && recordAllTdrTemps) {
-      const ms = Math.max(100, Math.min(60000, Number(queryIntervalMs) || 1000));
+      const ms = Math.max(
+        Q0_QUERY_INTERVAL_MIN_MS,
+        Math.min(Q0_QUERY_INTERVAL_MAX_MS, Number(queryIntervalMs) || DEFAULT_Q0_QUERY_INTERVAL_MS)
+      );
       const tick = () => {
         for (const key of TDR_TEMPERATURE_KEYS) {
           sendTcode(`Q1 ${key}`);
@@ -448,7 +472,7 @@
       // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
       if (!showUpdates && pendingQ0 > 0) {
         // expire a stuck pending Q0 so we don't swallow other traffic forever
-        if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > 5000) {
+        if (pendingQ0StartedAt && Date.now() - pendingQ0StartedAt > PENDING_Q0_LINE_TIMEOUT_MS) {
           pendingQ0 = 0;
           pendingQ0StartedAt = 0;
         }
@@ -501,9 +525,8 @@
         timestamp: new Date().toLocaleTimeString(),
       },
     ];
-    // Keep last 1000 logs
-    if (logs.length > 1000) {
-      logs = logs.slice(-1000);
+    if (logs.length > SERIAL_LOG_MAX_LINES) {
+      logs = logs.slice(-SERIAL_LOG_MAX_LINES);
     }
   }
 
@@ -727,6 +750,7 @@
       <div class="box status-panel">
         <StatusGrid
           states={statusStates}
+          labelByKey={{ monk_mode: monkStatusLabel }}
           clickableKeys={["connection", "fault", "test"]}
           onCellActivate={handleStatusActivate}
         />

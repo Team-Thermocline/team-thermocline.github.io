@@ -8,8 +8,8 @@ export const STATUS_CELLS = [
   { key: "ice", label: "ICE" },
 
   { key: "idle", label: "IDLE" },
-  { key: "compressor_fault", label: "CMPR. FAULT" },
   { key: "fast", label: "FAST" },
+  { key: "monk_mode", label: "" },
 
   { key: "door", label: "DOOR" },
   { key: "hot_exhaust", label: "EXHAUST" },

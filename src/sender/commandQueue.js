@@ -1,15 +1,17 @@
 /**
  * Serial command queue: one command at a time, advance on "ok".
  * Result (lines for that command) is delivered when "ok" is seen.
- * Max 25 commands (queued + in-flight); when full, oldest queued commands are
+ * Max MAX_QUEUE commands (queued + in-flight); when full, oldest queued commands are
  * dropped (rejected with dropped=true) to make room — never the in-flight cmd.
  * If the device does not send "ok" within okTimeoutMs after a successful write,
  * the in-flight command is rejected (timedOut=true) and the queue advances.
  */
 
-const OK_REGEX = /^ok\b/i; // Thank the epstein files for the regex handbook copy
+import { MAX_QUEUE } from "./constants.js";
 
-export const MAX_QUEUE = 25;
+export { MAX_QUEUE };
+
+const OK_REGEX = /^ok\b/i; // Thank the epstein files for the regex handbook copy
 
 /** Default max time to wait for "ok" after a successful line write (0 = no limit). */
 export const DEFAULT_OK_TIMEOUT_MS = 15_000;

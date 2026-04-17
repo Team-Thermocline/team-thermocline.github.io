@@ -4,6 +4,16 @@
  * for one status cell.
  */
 
+import {
+  EXHAUST_CT1_COMPRESSOR_OFF_A,
+  EXHAUST_CT2_FAN_ON_A,
+  ICE_CHAMBER_MIN_DELTA_C,
+  ICE_TDR1_FREEZING_BELOW_C,
+  MAX_QUEUE,
+  MONK_TEMP_C_HIGH,
+  MONK_TEMP_C_LOW,
+} from "./constants.js";
+
 function asBool(v) {
   return v === true;
 }
@@ -16,7 +26,7 @@ function asNumber(v) {
 export function connectionState(inputs) {
   const { lastConnectionError, serialConnected, hasReceivedGoodRx, commandQueueLength = 0 } = inputs;
   if (lastConnectionError) return "blink-red";
-  if (commandQueueLength >= 25) return "blink-red";
+  if (commandQueueLength >= MAX_QUEUE) return "blink-red";
   if (serialConnected && hasReceivedGoodRx) return "green";
   return "blink-yellow";
 }
@@ -84,6 +94,18 @@ export function fastState(inputs) {
   return "off";
 }
 
+/** True when Q0 TEMP is an extreme chamber temperature (C). */
+export function isMonkTemperatureAlert(telemetry) {
+  const t = asNumber(telemetry?.TEMP);
+  if (!Number.isFinite(t)) return false;
+  return t < MONK_TEMP_C_LOW || t > MONK_TEMP_C_HIGH;
+}
+
+/** MONK: blink red when chamber is monk level of temperature */
+export function monkModeState(inputs) {
+  return isMonkTemperatureAlert(inputs.telemetry) ? "blink-red" : "off";
+}
+
 /**
  * ICE: flash yellow when evaporator (TDR1) is below freezing and at least 20C colder than
  * chamber temperature from Q0 (TEMP).
@@ -92,7 +114,12 @@ export function iceState(inputs) {
   const t1 = asNumber(inputs.telemetry?.TDR1_TEMPERATURE_C);
   const chamberC = asNumber(inputs.telemetry?.TEMP);
   if (!Number.isFinite(t1) || !Number.isFinite(chamberC)) return "off";
-  if (t1 < 0 && chamberC - t1 >= 20) return "blink-yellow";
+  if (
+    t1 < ICE_TDR1_FREEZING_BELOW_C &&
+    chamberC - t1 >= ICE_CHAMBER_MIN_DELTA_C
+  ) {
+    return "blink-yellow";
+  }
   return "off";
 }
 
@@ -109,11 +136,6 @@ export function isStandbyOrHeatingState(telemetry) {
   return asBool(telemetry?.HEAT);
 }
 
-/** CT2 above this (A) => condenser fan treated as "on". */
-const CT2_COND_FAN_ON_A = 0.3;
-/** CT1 below this (A) => compressor treated as "off". */
-const CT1_COMPRESSOR_OFF_A = 0.25;
-
 /**
  * EXHAUST (hot_exhaust): in standby or while heating, blink yellow if condenser fan draws
  * current (CT2) but the compressor does not (CT1). Requires Q1 CT1/CT2 in telemetry.
@@ -126,7 +148,7 @@ export function hotExhaustState(inputs) {
   const ct2 = asNumber(telemetry.CT2_AMPS);
   if (!Number.isFinite(ct1) || !Number.isFinite(ct2)) return "off";
 
-  if (ct2 >= CT2_COND_FAN_ON_A && ct1 < CT1_COMPRESSOR_OFF_A) return "blink-yellow";
+  if (ct2 >= EXHAUST_CT2_FAN_ON_A && ct1 < EXHAUST_CT1_COMPRESSOR_OFF_A) return "blink-yellow";
   return "off";
 }
 
@@ -195,6 +217,7 @@ export function computeStatusStates(inputs) {
     ice: iceState(inputs),
     hot_exhaust: hotExhaustState(inputs),
     fast: fastState(inputs),
+    monk_mode: monkModeState(inputs),
     test: testState(inputs),
     door: doorState({ ...inputs, hasDoor, door }),
     door_safe: doorSafeState({ ...inputs, hasDoorSafe, doorSafe }),
