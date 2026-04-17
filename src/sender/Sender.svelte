@@ -748,10 +748,22 @@
     });
     window.electronSerial.onAutoConnected((portPath) => void finalizeElectronSerialSession(portPath));
 
+    const stopElectronPoll = () => {
+      if (electronPollTimer != null) {
+        clearInterval(electronPollTimer);
+        electronPollTimer = null;
+      }
+    };
+
     const tick = async () => {
+      if (electronSerialBridged) {
+        stopElectronPoll();
+        return;
+      }
       try {
         if (await window.electronSerial.isConnected()) {
           void finalizeElectronSerialSession(null);
+          stopElectronPoll();
         }
       } catch {
         /* ignore */
@@ -759,12 +771,8 @@
     };
     tick();
     electronPollTimer = setInterval(tick, 400);
-    setTimeout(() => {
-      if (electronPollTimer != null) {
-        clearInterval(electronPollTimer);
-        electronPollTimer = null;
-      }
-    }, 20000);
+    // Main auto-connect can lag the UI (late /dev/ttyAMA2, EBUSY after systemd restart); do not stop at 20s.
+    setTimeout(stopElectronPoll, 180000);
   });
 
   onDestroy(() => {
