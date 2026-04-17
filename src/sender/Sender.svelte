@@ -11,7 +11,11 @@
   import Graph from "./Graph.svelte";
   import KioskNumpad from "./KioskNumpad.svelte";
   import { TDR_TEMPERATURE_KEYS } from "./DebugTable.js";
-  import { computeStatusStates } from "./statusGridState.js";
+  import {
+    computeStatusStates,
+    isCoolFastOrSlowState,
+    isStandbyOrHeatingState,
+  } from "./statusGridState.js";
   import { createCommandQueue, MAX_QUEUE } from "./commandQueue.js";
   import { showWarning } from "../lib/warning.js";
   import { hasElectronSerial } from "../lib/kiosk.js";
@@ -52,6 +56,12 @@
   let samples = []; // [{ t, tempC, setTempC, rh, tdrC?: (number|null)[] }]
   let recordAllTdrTemps = false;
   let tdrPollInterval = null;
+  /** Q1 TDR1 while cooling (evaporator temp for ICE indicator). */
+  let tdr1CoolPollInterval = null;
+  let tdr1CoolPollActive = false;
+  /** Q1 CT1/CT2 in standby or heating (EXHAUST machinery-space hint). */
+  let ctStandbyHeatPollInterval = null;
+  let ctStandbyHeatPollActive = false;
 
   const TEMP_BAND_C = 3;
   $: tempUi = getTempUiModel({
@@ -195,6 +205,9 @@
       ...parsed,
     };
 
+    syncTdr1CoolPoll();
+    syncCtStandbyHeatPoll();
+
     // Show warning if FAULT is not NONE
     if (Object.prototype.hasOwnProperty.call(parsed, "FAULT")) {
       const f = String(parsed.FAULT ?? "").trim();
@@ -302,6 +315,59 @@
     }
   }
 
+  function stopTdr1CoolPoll() {
+    if (tdr1CoolPollInterval) {
+      clearInterval(tdr1CoolPollInterval);
+      tdr1CoolPollInterval = null;
+    }
+    tdr1CoolPollActive = false;
+  }
+
+  /** Start/stop ~20s Q1 TDR1 only when COOL_FAST / COOL_SLOW */
+  function syncTdr1CoolPoll() {
+    const want = serialConnected && isCoolFastOrSlowState(telemetry);
+    if (want === tdr1CoolPollActive) return;
+    stopTdr1CoolPoll();
+    if (!want) return;
+    tdr1CoolPollActive = true;
+    const tick = () => {
+      if (!serialConnected || !isCoolFastOrSlowState(telemetry)) {
+        stopTdr1CoolPoll();
+        return;
+      }
+      sendTcode("Q1 TDR1_TEMPERATURE_C");
+    };
+    tick();
+    tdr1CoolPollInterval = setInterval(tick, 20000);
+  }
+
+  function stopCtStandbyHeatPoll() {
+    if (ctStandbyHeatPollInterval) {
+      clearInterval(ctStandbyHeatPollInterval);
+      ctStandbyHeatPollInterval = null;
+    }
+    ctStandbyHeatPollActive = false;
+  }
+
+  /** ~20s Q1 CT1 + CT2 while standby or heating (EXHAUST indicator). */
+  function syncCtStandbyHeatPoll() {
+    const want = serialConnected && isStandbyOrHeatingState(telemetry);
+    if (want === ctStandbyHeatPollActive) return;
+    stopCtStandbyHeatPoll();
+    if (!want) return;
+    ctStandbyHeatPollActive = true;
+    const tick = () => {
+      if (!serialConnected || !isStandbyOrHeatingState(telemetry)) {
+        stopCtStandbyHeatPoll();
+        return;
+      }
+      sendTcode("Q1 CT1_AMPS");
+      sendTcode("Q1 CT2_AMPS");
+    };
+    tick();
+    ctStandbyHeatPollInterval = setInterval(tick, 20000);
+  }
+
   /** Q1 TDR temperature keys at the same cadence as Q0 (graph update interval). */
   $: {
     stopTdrPoll();
@@ -367,6 +433,8 @@
       serialConnected = true;
       startQueryPolling();
       runQ1StartupQueries();
+      syncTdr1CoolPoll();
+      syncCtStandbyHeatPoll();
     } else {
       addLog("Connection failed", "error");
     }
@@ -408,6 +476,8 @@
   async function disconnect() {
     stopQueryPolling();
     stopTdrPoll();
+    stopTdr1CoolPoll();
+    stopCtStandbyHeatPoll();
     commandQueue = null;
     commandQueueLength = 0;
     lastConnectionError = null;

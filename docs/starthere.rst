@@ -70,33 +70,33 @@ Once the HMI is booted (which can take one to two minutes), you should see the m
 
 In the top right are the status indicators, they may change color or flash to indicate important information.
 
-+--------------+---------------------------------------------------------------------------------------+
-|  Indicator   |                                         Desc.                                         |
-+==============+=======================================================================================+
-| CONN.        | Shows connection to the controller board.                                             |
-+--------------+---------------------------------------------------------------------------------------+
-| FAULT        | Indicates a current fault.                                                            |
-+--------------+---------------------------------------------------------------------------------------+
-| READY        | Green when ready to run or running, flashing green when you've reached your setpoint. |
-+--------------+---------------------------------------------------------------------------------------+
-| HEAT         | Indicates the heater is on.                                                           |
-+--------------+---------------------------------------------------------------------------------------+
-| COOL         | Indicates the cooler is on.                                                           |
-+--------------+---------------------------------------------------------------------------------------+
-| WAIT         | Indicates the chamber is waiting for a command.                                       |
-+--------------+---------------------------------------------------------------------------------------+
-| EVAP. FAULT  | Indicates a fault in the evaporator.                                                  |
-+--------------+---------------------------------------------------------------------------------------+
-| CMPR. FAULT  | Indicates a fault in the compressor.                                                  |
-+--------------+---------------------------------------------------------------------------------------+
-| OVERC. FAULT | Indicates a overcurrent protection fault.                                             |
-+--------------+---------------------------------------------------------------------------------------+
-| DOOR         | Indicates the door is open or not properly tightened down.                            |
-+--------------+---------------------------------------------------------------------------------------+
-| EXHAUST      | Indicates the condenser fan is being held on for cooling the machinery space.         |
-+--------------+---------------------------------------------------------------------------------------+
-| TEST         | Indicates the chamber is in test mode.                                                |
-+--------------+---------------------------------------------------------------------------------------+
++-------------+---------------------------------------------------------------------------------------+
+|  Indicator  |                                         Desc.                                         |
++=============+=======================================================================================+
+| CONN.       | Shows connection to the controller board.                                             |
++-------------+---------------------------------------------------------------------------------------+
+| FAULT       | Indicates a current fault.                                                            |
++-------------+---------------------------------------------------------------------------------------+
+| READY       | Green when ready to run or running, flashing green when you've reached your setpoint. |
++-------------+---------------------------------------------------------------------------------------+
+| HEAT        | Indicates the heater is on.                                                           |
++-------------+---------------------------------------------------------------------------------------+
+| COOL        | Indicates the cooler is on.                                                           |
++-------------+---------------------------------------------------------------------------------------+
+| ICE         | Flashes yellow when the controller thinks there might be ice forming                  |
++-------------+---------------------------------------------------------------------------------------+
+| IDLE        | Solid green when MACHINE is IDLE                                                      |
++-------------+---------------------------------------------------------------------------------------+
+| CMPR. FAULT | Indicates a fault in the compressor.                                                  |
++-------------+---------------------------------------------------------------------------------------+
+| FAST        | Flashes yellow when controller is ramping as fast as it can                           |
++-------------+---------------------------------------------------------------------------------------+
+| DOOR        | Indicates the door is open or not properly tightened down.                            |
++-------------+---------------------------------------------------------------------------------------+
+| EXHAUST     | Indicates the condenser fan is being held on for cooling the machinery space.         |
++-------------+---------------------------------------------------------------------------------------+
+| TEST        | Indicates the chamber is in test mode.                                                |
++-------------+---------------------------------------------------------------------------------------+
 
 
 On the left you may choose to display temperature readings in Fahrenheit or Celsius.
@@ -155,14 +155,14 @@ all possible faults but the most common and their imediete mitigations.
 
    * - Error code
      - Desc.
-   * - | FAULT_CODE_I2C
-       | COMMUNICATION_ERROR
+   | * -                 | FAULT_CODE_I2C |
+   | COMMUNICATION_ERROR |                |
      - One of the i2C devices on or off the board is not responding. Check debug values, the ADG chip is the only i2C device on board. If the SHT35 does not show up, check the i2C connector on the lower right hand of the board.
-   * - | FAULT_CODE_THERMOCOUPLE
-       | OPEN
+   | * -  | FAULT_CODE_THERMOCOUPLE |
+   | OPEN |                         |
      - Any thermocouple becoming disconnected is cause for a FAULT since the controller relies on their values to run many important control loops. Inspect the TDR0-3 input JST plugs on the upper right of the control board.
-   * - | FAULT_CODE_COMPRESSOR
-       | OVERCURRENT
+   | * -         | FAULT_CODE_COMPRESSOR |
+   | OVERCURRENT |                       |
      - The compressor went overcurrent on startup or during operation. Wait at leas **ten minutes** before restarting the compressor after an overcurrent fault. The motor may have stalled.
    * - FAULT_CODE_ENV_SENSOR
      - The internal SHT35 or another internal sensor faulted while running. Check the i2c connection and the sensor itself.

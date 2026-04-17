@@ -68,6 +68,68 @@ export function coolState(inputs) {
   return asBool(inputs.telemetry?.COOL) ? "blink-yellow" : "off";
 }
 
+/** IDLE: solid green when Q0 STATE is idle. */
+export function idleState(inputs) {
+  const s = (inputs.telemetry?.STATE ?? "").toString().trim().toLowerCase();
+  if (s === "idle") return "green";
+  return "off";
+}
+
+/**
+ * FAST: blink yellow when Q0 STATE names a fast mode (e.g. COOL_FAST; future HEAT_FAST).
+ */
+export function fastState(inputs) {
+  const s = (inputs.telemetry?.STATE ?? "").toString().trim().toUpperCase();
+  if (s.includes("FAST")) return "blink-yellow";
+  return "off";
+}
+
+/**
+ * ICE: flash yellow when evaporator (TDR1) is below freezing and at least 20C colder than
+ * chamber temperature from Q0 (TEMP).
+ */
+export function iceState(inputs) {
+  const t1 = asNumber(inputs.telemetry?.TDR1_TEMPERATURE_C);
+  const chamberC = asNumber(inputs.telemetry?.TEMP);
+  if (!Number.isFinite(t1) || !Number.isFinite(chamberC)) return "off";
+  if (t1 < 0 && chamberC - t1 >= 20) return "blink-yellow";
+  return "off";
+}
+
+/** True when controller STATE is aggressive/slow cooling (poll TDR1 more often). */
+export function isCoolFastOrSlowState(telemetry) {
+  const s = (telemetry?.STATE ?? "").toString().trim().toLowerCase();
+  return s === "cool_fast" || s === "cool_slow";
+}
+
+/** Standby or active heating (Q0): used for exhaust / machinery-space fan vs compressor check. */
+export function isStandbyOrHeatingState(telemetry) {
+  const s = (telemetry?.STATE ?? "").toString().trim().toLowerCase();
+  if (s === "standby") return true;
+  return asBool(telemetry?.HEAT);
+}
+
+/** CT2 above this (A) => condenser fan treated as "on". */
+const CT2_COND_FAN_ON_A = 0.3;
+/** CT1 below this (A) => compressor treated as "off". */
+const CT1_COMPRESSOR_OFF_A = 0.25;
+
+/**
+ * EXHAUST (hot_exhaust): in standby or while heating, blink yellow if condenser fan draws
+ * current (CT2) but the compressor does not (CT1). Requires Q1 CT1/CT2 in telemetry.
+ */
+export function hotExhaustState(inputs) {
+  const telemetry = inputs.telemetry;
+  if (!telemetry || !isStandbyOrHeatingState(telemetry)) return "off";
+
+  const ct1 = asNumber(telemetry.CT1_AMPS);
+  const ct2 = asNumber(telemetry.CT2_AMPS);
+  if (!Number.isFinite(ct1) || !Number.isFinite(ct2)) return "off";
+
+  if (ct2 >= CT2_COND_FAN_ON_A && ct1 < CT1_COMPRESSOR_OFF_A) return "blink-yellow";
+  return "off";
+}
+
 /** TEST: red when test mode on. */
 export function testState(inputs) {
   return inputs.testMode ? "blink-red" : "off";
@@ -129,6 +191,10 @@ export function computeStatusStates(inputs) {
     }),
     heat: heatState(inputs),
     cool: coolState(inputs),
+    idle: idleState(inputs),
+    ice: iceState(inputs),
+    hot_exhaust: hotExhaustState(inputs),
+    fast: fastState(inputs),
     test: testState(inputs),
     door: doorState({ ...inputs, hasDoor, door }),
     door_safe: doorSafeState({ ...inputs, hasDoorSafe, doorSafe }),
