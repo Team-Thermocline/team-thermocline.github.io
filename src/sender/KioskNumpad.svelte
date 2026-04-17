@@ -44,9 +44,12 @@
   }
 
   function backdropKey(e) {
+    if (!open) return;
     if (e.key === "Escape") cancel();
   }
 </script>
+
+<svelte:window on:keydown={backdropKey} />
 
 {#if open}
   <div
@@ -54,8 +57,6 @@
     role="dialog"
     aria-modal="true"
     aria-label={title || "Number entry"}
-    tabindex="-1"
-    on:keydown={backdropKey}
   >
     <button type="button" class="numpad-backdrop" aria-label="Cancel" on:click={cancel}></button>
     <div class="numpad-panel">

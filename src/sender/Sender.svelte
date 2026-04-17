@@ -2,7 +2,7 @@
   import { afterUpdate, onMount, onDestroy } from "svelte";
   import "./Sender.css";
   import { buildM0Command, buildM2Command, buildQueryCommand, buildTemperatureCommand } from "./tcode.js";
-  import { createLineProcessor, parseTelemetryLine } from "./rx.js";
+  import { createLineProcessor, normalizeFaultString, parseLooseTelemetryLine } from "./rx.js";
   import { createSerialConnection } from "./serial.js";
   import { fToC, getTempUiModel } from "./temp.js";
   import { computeStickToBottom, scrollToBottom } from "./terminalScroll.js";
@@ -51,6 +51,8 @@
   let queryIntervalMs = DEFAULT_Q0_QUERY_INTERVAL_MS;
   let commandQueue = null;
   let commandQueueLength = 0; // Length of the command queue
+  /** Timeouts for post-connect Q1 metadata retries (cleared on disconnect). */
+  let buildMetadataRetryTimeouts = [];
   let telemetry = null;
   let manualCommand = "";
   let tempNumpadOpen = false;
@@ -110,8 +112,15 @@
   const isQ0Command = (command) => /^Q0\b/i.test((command ?? "").trim());
   const isDataLine = (line) => /^data:/i.test((line ?? "").trim());
   const isOkLine = (line) => /^ok\b/i.test((line ?? "").trim());
-  const looksLikeQ0Data = (line) =>
-    /TEMP=|RH=|HEAT=|COOL=|STATE=|SET_TEMP=|SET_RH=|ALARM=/i.test(line ?? "");
+  /** Q0 telemetry lines normally include TEMP or RH; avoid matching BUILD-only `data:` lines to the Q0 collapse path. */
+  const looksLikeQ0Data = (line) => /TEMP=/.test(line ?? "") || /\bRH=/.test(line ?? "");
+
+  const Q1_META_KEYS = ["BUILD", "BUILDER", "BUILD_DATE"];
+  function isQ1MetaOnlyParsed(parsed) {
+    if (!parsed || typeof parsed !== "object") return false;
+    const keys = Object.keys(parsed);
+    return keys.length > 0 && keys.every((k) => Q1_META_KEYS.includes(k));
+  }
 
   function upsertCollapsedQ0(ts = new Date().toLocaleTimeString()) {
     const last = logs[logs.length - 1];
@@ -173,7 +182,11 @@
     return dashIndex === -1 ? afterG : afterG.slice(0, dashIndex);
   }
 
-  $: buildVersion = telemetry?.BUILD ?? null;
+  /** Always string for UI / extractCommitHash; controller may send numeric-looking tags. */
+  $: buildVersion =
+    telemetry?.BUILD == null || telemetry?.BUILD === ""
+      ? null
+      : String(telemetry.BUILD);
   $: buildCommitHash = extractCommitHash(buildVersion);
   $: builderName = telemetry?.BUILDER ?? null;
   $: buildDateSec = telemetry?.BUILD_DATE ?? null;
@@ -227,7 +240,7 @@
 
     // Show warning if FAULT is not NONE
     if (Object.prototype.hasOwnProperty.call(parsed, "FAULT")) {
-      const f = String(parsed.FAULT ?? "").trim();
+      const f = normalizeFaultString(parsed.FAULT);
       if (f && f.toUpperCase() !== "NONE" && f !== lastFaultWarned) {
         lastFaultWarned = f;
         showWarning("FAULT! " + f);
@@ -424,7 +437,37 @@
     }
   }
 
-  function finalizeElectronSerialSession(portPath) {
+  function clearBuildMetadataRetries() {
+    for (const id of buildMetadataRetryTimeouts) {
+      clearTimeout(id);
+    }
+    buildMetadataRetryTimeouts = [];
+  }
+
+  /** Re-request Q1 build fields if still empty (first reply after connect is sometimes lost). */
+  async function refreshQ1BuildMetadataIfMissing() {
+    if (!serialLinkUp || !commandQueue) return;
+    try {
+      const b = telemetry?.BUILD;
+      if (b == null || b === "") await sendTcode("Q1 BUILD");
+      const br = telemetry?.BUILDER;
+      if (br == null || br === "") await sendTcode("Q1 BUILDER");
+      const bd = telemetry?.BUILD_DATE;
+      if (bd == null || bd === "") await sendTcode("Q1 BUILD_DATE");
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function scheduleBuildMetadataRetries() {
+    clearBuildMetadataRetries();
+    buildMetadataRetryTimeouts = [
+      setTimeout(() => void refreshQ1BuildMetadataIfMissing(), 2000),
+      setTimeout(() => void refreshQ1BuildMetadataIfMissing(), 5500),
+    ];
+  }
+
+  async function finalizeElectronSerialSession(portPath) {
     if (typeof window === "undefined" || !window.electronSerial) return;
     if (electronSerialBridged) return;
 
@@ -455,8 +498,9 @@
     addLog(`Connected (Electron)${pathNote} at ${baudRate} baud`, "success");
     serialConnected = true;
     electronSerialBridged = true;
+    await runQ1StartupQueries();
     startQueryPolling();
-    runQ1StartupQueries();
+    scheduleBuildMetadataRetries();
     if (electronPollTimer != null) {
       clearInterval(electronPollTimer);
       electronPollTimer = null;
@@ -476,7 +520,7 @@
     if (typeof window !== "undefined" && window.electronSerial) {
       const r = await window.electronSerial.connect(baudRate);
       if (r?.success) {
-        finalizeElectronSerialSession(r.port);
+        await finalizeElectronSerialSession(r.port);
         return;
       }
       addLog(r?.error ?? "Electron serial connect failed", "error");
@@ -509,8 +553,9 @@
       );
       addLog(`Connected at ${baudRate} baud`, "success");
       serialConnected = true;
+      await runQ1StartupQueries();
       startQueryPolling();
-      runQ1StartupQueries();
+      scheduleBuildMetadataRetries();
       syncTdr1CoolPoll();
       syncCtStandbyHeatPoll();
     } else {
@@ -523,6 +568,15 @@
     for (const line of lines) {
       commandQueue?.onLine(line);
 
+      // Q1 build metadata must never be swallowed by the Q0 collapse path (showUpdates off + pendingQ0).
+      const metaParsed = parseLooseTelemetryLine(line);
+      if (isQ1MetaOnlyParsed(metaParsed)) {
+        applyParsedTelemetry(metaParsed);
+        hasReceivedGoodRx = true;
+        addLog(`RX: ${line}`, "rx");
+        continue;
+      }
+
       // If Q0 updates are hidden, collapse "data:" + "ok" that follow a Q0.
       if (!showUpdates && pendingQ0 > 0) {
         // expire a stuck pending Q0 so we don't swallow other traffic forever
@@ -533,7 +587,7 @@
 
         if (isDataLine(line) && looksLikeQ0Data(line)) {
           pendingQ0 = 2;
-          applyParsedTelemetry(parseTelemetryLine(line));
+          applyParsedTelemetry(parseLooseTelemetryLine(line));
           upsertCollapsedQ0();
           continue;
         }
@@ -545,13 +599,14 @@
         }
       }
 
-      applyParsedTelemetry(parseTelemetryLine(line));
+      applyParsedTelemetry(parseLooseTelemetryLine(line));
       hasReceivedGoodRx = true;
       addLog(`RX: ${line}`, "rx");
     }
   }
 
   async function disconnect() {
+    clearBuildMetadataRetries();
     stopQueryPolling();
     stopTdrPoll();
     stopTdr1CoolPoll();
@@ -646,6 +701,9 @@
       await sendTcode("Q1 BUILD");
       await sendTcode("Q1 BUILDER");
       await sendTcode("Q1 BUILD_DATE");
+      // First BUILD reply is occasionally dropped right after link-up; ask again after a short pause.
+      await new Promise((r) => setTimeout(r, 400));
+      await sendTcode("Q1 BUILD");
     } catch {
       addLog("Q1 startup queries failed", "error");
     }
@@ -688,12 +746,12 @@
       lastConnectionError = msg;
       addLog(`Serial error: ${msg}`, "error");
     });
-    window.electronSerial.onAutoConnected((portPath) => finalizeElectronSerialSession(portPath));
+    window.electronSerial.onAutoConnected((portPath) => void finalizeElectronSerialSession(portPath));
 
     const tick = async () => {
       try {
         if (await window.electronSerial.isConnected()) {
-          finalizeElectronSerialSession(null);
+          void finalizeElectronSerialSession(null);
         }
       } catch {
         /* ignore */
@@ -710,6 +768,7 @@
   });
 
   onDestroy(() => {
+    clearBuildMetadataRetries();
     if (electronPollTimer != null) {
       clearInterval(electronPollTimer);
       electronPollTimer = null;
@@ -766,15 +825,14 @@
           <div class="build-info">
             <span class="build-info-label">Build</span>
             <span class="build-info-value build-version" class:dirty={buildIsDirty}>
-              {#if buildVersion}
-                <a
-                  href={"https://github.com/Team-Thermocline/Controller/commit/" + (buildCommitHash ?? buildVersion)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style="color:inherit;text-decoration:underline;"
+              {#if buildVersion != null && buildVersion !== ""}
+                <span
+                  class="build-version-text"
+                  title={"https://github.com/Team-Thermocline/Controller/commit/" +
+                    (buildCommitHash ?? buildVersion)}
                 >
                   {buildVersion}
-                </a>
+                </span>
               {:else}
                 N/A
               {/if}

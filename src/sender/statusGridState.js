@@ -1,3 +1,5 @@
+import { normalizeFaultString } from "./rx.js";
+
 /**
  * Status grid light conditions. Each function returns
  * "off" | "green" | "blink-green" | "blink-yellow" | "blink-red"
@@ -191,7 +193,7 @@ export function computeStatusStates(inputs) {
   const alarmValue =
     inputs.telemetry?.ALARM == null ? 0 : asNumber(inputs.telemetry.ALARM);
   const faultString =
-    inputs.telemetry?.FAULT != null ? String(inputs.telemetry.FAULT).trim() : "";
+    inputs.telemetry?.FAULT != null ? normalizeFaultString(inputs.telemetry.FAULT) : "";
   const hasDoor = typeof inputs.telemetry?.DOOR === "boolean";
   const door = hasDoor ? inputs.telemetry.DOOR : null;
   const hasDoorSafe = typeof inputs.telemetry?.DOOR_SAFE === "boolean";

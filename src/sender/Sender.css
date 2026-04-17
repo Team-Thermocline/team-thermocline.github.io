@@ -122,6 +122,12 @@ select:disabled {
   font-weight: 700;
 }
 
+.build-version-text {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: default;
+}
+
 .gauges {
   display: flex;
   gap: 12px;

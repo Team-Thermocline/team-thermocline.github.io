@@ -58,8 +58,30 @@ export function createLineProcessor() {
   };
 }
 
+/**
+ * Strip serial/garble noise from FAULT (nulls, literal \\xNN from line escape, control chars).
+ * Map truncated / corrupted "no fault" tokens to NONE.
+ */
+export function normalizeFaultString(raw) {
+  let s = String(raw ?? "");
+  s = s.replace(/\x00/g, "");
+  s = s.replace(/\\x[0-9a-f]{2}/gi, "");
+  s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  s = s.trim();
+  const letters = s.toUpperCase().replace(/[^A-Z]/g, "");
+  if (letters === "NONE" || letters === "NON") return "NONE";
+  return s;
+}
+
 function parseTelemetryValue(key, rawValue) {
   const v = rawValue.trim();
+  if (key === "FAULT") return normalizeFaultString(v);
+  // Never coerce BUILD/BUILDER to numbers — e.g. BUILD=0 is a valid tag but falsy in `{#if buildVersion}`.
+  if (key === "BUILD" || key === "BUILDER") return v;
+  if (key === "BUILD_DATE") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : v;
+  }
   if (v === "true") return true;
   if (v === "false") return false;
   if (key === "STATE") return v;
@@ -94,5 +116,19 @@ export function parseTelemetryLine(line) {
   }
 
   return Object.keys(out).length ? out : null;
+}
+
+/** Q1 lines sometimes omit the `data:` prefix (e.g. `BUILD=1.2.3`). */
+export function parseLooseTelemetryLine(line) {
+  const fromData = parseTelemetryLine(line);
+  if (fromData) return fromData;
+  const trimmed = (line ?? "").trim();
+  const m = /^([A-Z0-9_]+)\s*[=:]\s*(.+)$/i.exec(trimmed);
+  if (!m) return null;
+  const key = m[1].toUpperCase();
+  const rawValue = m[2];
+  const known = ["BUILD", "BUILDER", "BUILD_DATE", "FAULT", "ALARM", "STATE"];
+  if (!known.includes(key)) return null;
+  return { [key]: parseTelemetryValue(key, rawValue) };
 }
 
