@@ -29,6 +29,36 @@ Feel free to edit this page and adjust to the schedule that presents itself.
 See runtime hours in the **Debug Values** section of the HMI touch screen :doc:`using-the-hmi`.
 
 
+System Structure
+================
+
+Inside the insulation houses the main chamber core. The basic assembly looks like this:
+
+.. image:: images/Mechanical/SideAndInsideBreakdown.png
+
++--------+----------------------------+
+| Number |        Description         |
++========+============================+
+| 1      | "Trapezoid" outer paneling |
++--------+----------------------------+
+| 2      | Circulation Fan            |
++--------+----------------------------+
+| 3      | Machinery Access Door      |
++--------+----------------------------+
+| 4      | Chamber Door               |
++--------+----------------------------+
+| 5      | Wire Passthrough Port      |
++--------+----------------------------+
+| 6      | Chamber Pedestal           |
++--------+----------------------------+
+| 7      | IEC Receptacle             |
++--------+----------------------------+
+| 8      | Chamber Controller Board   |
++--------+----------------------------+
+| 9      | Chamber Shroud             |
++--------+----------------------------+
+
+
 Installing and Uninstalling panels
 ==================================
 

@@ -26,6 +26,12 @@ at Southern New Hampshire University (SNHU).
 +--------+-----------------------+
 | 7      | Viewing Window        |
 +--------+-----------------------+
+| 8      | Condensate Drain Port |
++--------+-----------------------+
+
+This manual references things in terms of **Left** and **Right** side of the machine.
+
+.. image:: images/Mechanical/LeftNRight.png
 
 
 Moving the Chamber
@@ -58,7 +64,7 @@ The chamber uses both a raspberry pi pico as the primary controller and a raspbe
 should boot almost imedietly after power is applied, and should turn on the chamber lights.
 **The pi 5 may take one or two minutes to boot.**
 
-.. image:: images/BehindOverview.png
+.. image:: images/placeholder.png
 
 
 Using the HMI Touch Screen
