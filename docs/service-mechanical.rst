@@ -26,7 +26,7 @@ Feel free to edit this page and adjust to the schedule that presents itself.
 | 3D Prints                  |     |      | x     |       |        |        |            |
 +----------------------------+-----+------+-------+-------+--------+--------+------------+
 
-See runtime hours in the **Debug Values** section of the HMI touch screen :doc:`using-the-hmi`.
+See runtime hours in the **Debug Values** section of the HMI touch screen (:ref:`hmi-debug-values`).
 
 
 System Structure

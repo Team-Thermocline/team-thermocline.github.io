@@ -130,6 +130,8 @@ The website view has all the same information as the HMI touch screen with the a
 features such as being able to log all the temperature readings at once to the graph and exporting
 the data as a .csv file.
 
+.. _hmi-debug-values:
+
 Debug Values
 ============
 
@@ -160,17 +162,17 @@ all possible faults but the most common and their imediete mitigations.
    :class: longtable
 
    * - Error code
-     - Desc.
-   | * -                 | FAULT_CODE_I2C |
-   | COMMUNICATION_ERROR |                |
+     - Description
+   * - | ``COMMUNICATION_ERROR``
+       | ``FAULT_CODE_I2C``
      - One of the i2C devices on or off the board is not responding. Check debug values, the ADG chip is the only i2C device on board. If the SHT35 does not show up, check the i2C connector on the lower right hand of the board.
-   | * -  | FAULT_CODE_THERMOCOUPLE |
-   | OPEN |                         |
+   * - | ``OPEN``
+       | ``FAULT_CODE_THERMOCOUPLE``
      - Any thermocouple becoming disconnected is cause for a FAULT since the controller relies on their values to run many important control loops. Inspect the TDR0-3 input JST plugs on the upper right of the control board.
-   | * -         | FAULT_CODE_COMPRESSOR |
-   | OVERCURRENT |                       |
-     - The compressor went overcurrent on startup or during operation. Wait at leas **ten minutes** before restarting the compressor after an overcurrent fault. The motor may have stalled.
-   * - FAULT_CODE_ENV_SENSOR
+   * - | ``OVERCURRENT``
+       | ``FAULT_CODE_COMPRESSOR``
+     - The compressor went overcurrent on startup or during operation. Wait at least **ten minutes** before restarting the compressor after an overcurrent fault. The motor may have stalled.
+   * - ``FAULT_CODE_ENV_SENSOR``
      - The internal SHT35 or another internal sensor faulted while running. Check the i2c connection and the sensor itself.
-   * - FAULT_CODE_OVERCURRENT
+   * - ``FAULT_CODE_OVERCURRENT``
      - Any load went overcurrent during operation. Check fans and heaters. Use the debug values to monitor current when running.
