@@ -89,7 +89,7 @@ In the top right are the status indicators, they may change color or flash to in
 +-------------+---------------------------------------------------------------------------------------+
 | COOL        | Indicates the cooler is on.                                                           |
 +-------------+---------------------------------------------------------------------------------------+
-| ICE         | Flashes yellow when the controller thinks there might be ice forming                  |
+| ICE         | Flashes yellow for suspected ice; flashes green during DEHUMIDIFY.                    |
 +-------------+---------------------------------------------------------------------------------------+
 | IDLE        | Solid green when MACHINE is IDLE                                                      |
 +-------------+---------------------------------------------------------------------------------------+

@@ -1,6 +1,6 @@
 /**
  * Status grid light conditions. Each function returns
- * "off" | "green" | "blink-yellow" | "blink-red"
+ * "off" | "green" | "blink-green" | "blink-yellow" | "blink-red"
  * for one status cell.
  */
 
@@ -108,7 +108,7 @@ export function monkModeState(inputs) {
 
 /**
  * ICE: flash yellow when evaporator (TDR1) is below freezing and at least 20C colder than
- * chamber temperature from Q0 (TEMP).
+ * chamber temperature from Q0 (TEMP). In STATE=dehumidify the same condition flashes green.
  */
 export function iceState(inputs) {
   const t1 = asNumber(inputs.telemetry?.TDR1_TEMPERATURE_C);
@@ -118,6 +118,8 @@ export function iceState(inputs) {
     t1 < ICE_TDR1_FREEZING_BELOW_C &&
     chamberC - t1 >= ICE_CHAMBER_MIN_DELTA_C
   ) {
+    const state = (inputs.telemetry?.STATE ?? "").toString().trim().toLowerCase();
+    if (state === "dehumidify") return "blink-green";
     return "blink-yellow";
   }
   return "off";
