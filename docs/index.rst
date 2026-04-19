@@ -22,6 +22,7 @@ We reccomend reading the documentation in order, starting with :doc:`starthere`.
    service-mechanical
    service-electronics
    service-thermo
+   service-software
 
 
 
