@@ -42,7 +42,7 @@ div.footer {
 }
 
 div.footer a {
-  color: var(--tt-blue-500) !important;
+  color: #fff !important;
 }
 
 div.footer a:hover {

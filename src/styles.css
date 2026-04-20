@@ -331,6 +331,38 @@ main {
   display: block;
 }
 
+/* Sphinx _sources/*.rst.txt: fetched and shown as HTML (plain text URLs ignore site CSS). */
+.docs-source-view {
+  width: 100%;
+  min-height: min(92vh, calc(100vh - 200px));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 16px 20px;
+  background: var(--bg);
+  border: 0;
+  box-shadow: 0 0 0 4px var(--blue-500) inset;
+}
+
+.docs-source-pre {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #fff;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.docs-source-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.docs-source-error {
+  color: var(--red-600);
+}
+
 /* Updates */
 .updates {
   margin-top: 24px;
