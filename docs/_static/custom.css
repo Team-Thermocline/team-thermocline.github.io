@@ -1,23 +1,33 @@
+/*
+ * Sphinx theme overrides. Variable names match src/styles.css :root — keep values in sync when theming.
+ */
 :root {
-  --tt-bg: #0a0a0b;
-  --tt-edge: #0e0e10;
-  --tt-text: #e6e6e6;
-  --tt-muted: #b7c0ca;
-  --tt-blue-900: #0b2747;
-  --tt-blue-700: #123a6b;
-  --tt-blue-500: #1f5fa8;
-  --tt-red-600: #c62828;
+  --blue-900: #0b2747;
+  --blue-700: #123a6b;
+  --blue-500: #1f5fa8;
+  --cyan-500: #00ffff;
+  --red-600: #c62828;
+  --red-700: #b71c1c;
+  --edge: #0e0e10;
+  --bg: #0a0a0b;
+  --text: #e6e6e6;
+  --muted: #b7c0ca;
+  --text-on-strong: #fff;
+  --admonition-tint: rgba(18, 58, 107, 0.15);
+  --sphinx-line-faint: rgba(230, 230, 230, 0.15);
+  --sphinx-line: rgba(230, 230, 230, 0.2);
+  --link-underline: rgba(31, 95, 168, 0.5);
 }
 
 html,
 body {
-  background-color: var(--tt-bg) !important;
-  color: var(--tt-text) !important;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
 }
 
 div.body {
-  background-color: var(--tt-bg) !important;
-  color: var(--tt-text) !important;
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
 }
 
 div.body > .section,
@@ -25,7 +35,7 @@ div.body p,
 div.body li,
 div.body td,
 div.body th {
-  color: var(--tt-text) !important;
+  color: var(--text) !important;
 }
 
 div.document,
@@ -33,55 +43,55 @@ div.documentwrapper,
 div.bodywrapper,
 div.sphinxsidebar {
   background-color: transparent !important;
-  color: var(--tt-text) !important;
+  color: var(--text) !important;
 }
 
 div.footer {
   background-color: transparent !important;
-  color: var(--tt-muted) !important;
+  color: var(--muted) !important;
 }
 
 div.footer a {
-  color: #fff !important;
+  color: var(--text-on-strong) !important;
 }
 
 div.footer a:hover {
-  color: var(--tt-red-600) !important;
+  color: var(--red-600) !important;
 }
 
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
-  color: var(--tt-text) !important;
+  color: var(--text) !important;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 div.sphinxsidebar h3 a {
-  color: var(--tt-blue-500) !important;
+  color: var(--blue-500) !important;
 }
 
 div.sphinxsidebar p {
-  color: var(--tt-muted) !important;
+  color: var(--muted) !important;
 }
 
 div.sphinxsidebar ul {
-  color: var(--tt-text) !important;
+  color: var(--text) !important;
 }
 
 div.sphinxsidebar a {
-  color: var(--tt-blue-500) !important;
-  border-bottom-color: rgba(31, 95, 168, 0.5) !important;
+  color: var(--blue-500) !important;
+  border-bottom-color: var(--link-underline) !important;
 }
 
 div.sphinxsidebar a:hover {
-  color: var(--tt-red-600) !important;
-  border-bottom-color: var(--tt-red-600) !important;
+  color: var(--red-600) !important;
+  border-bottom-color: var(--red-600) !important;
 }
 
 div.sphinxsidebar input {
-  background-color: var(--tt-edge) !important;
-  border-color: var(--tt-blue-500) !important;
-  color: var(--tt-text) !important;
+  background-color: var(--edge) !important;
+  border-color: var(--blue-500) !important;
+  color: var(--text) !important;
 }
 
 div.sphinxsidebar,
@@ -90,8 +100,8 @@ div.sphinxsidebarwrapper {
 }
 
 div.sphinxsidebar hr {
-  background: rgba(230, 230, 230, 0.2) !important;
-  color: rgba(230, 230, 230, 0.2) !important;
+  background: var(--sphinx-line) !important;
+  color: var(--sphinx-line) !important;
 }
 
 div.body h1,
@@ -100,80 +110,80 @@ div.body h3,
 div.body h4,
 div.body h5,
 div.body h6 {
-  color: var(--tt-text) !important;
+  color: var(--text) !important;
 }
 
 div.body a.headerlink {
-  color: var(--tt-muted) !important;
+  color: var(--muted) !important;
 }
 
 div.body a.headerlink:hover {
-  color: var(--tt-red-600) !important;
+  color: var(--red-600) !important;
 }
 
 a,
 a:visited {
-  color: var(--tt-blue-500) !important;
+  color: var(--blue-500) !important;
 }
 
 a:hover,
 a:focus {
-  color: var(--tt-red-600) !important;
+  color: var(--red-600) !important;
 }
 
 pre,
 code,
 tt {
-  background-color: var(--tt-edge) !important;
-  color: var(--tt-text) !important;
+  background-color: var(--edge) !important;
+  color: var(--text) !important;
   border: 0 !important;
 }
 
 div.highlight {
-  background-color: var(--tt-edge) !important;
+  background-color: var(--edge) !important;
   border: 0 !important;
 }
 
 table.docutils,
 table.docutils td,
 table.docutils th {
-  border-color: rgba(230, 230, 230, 0.15) !important;
+  border-color: var(--sphinx-line-faint) !important;
 }
 
 div.admonition,
 div.note,
 div.warning,
 div.tip {
-  background: rgba(18, 58, 107, 0.15) !important;
-  border-left: 4px solid var(--tt-blue-500) !important;
+  background: var(--admonition-tint) !important;
+  border-left: 4px solid var(--blue-500) !important;
 }
 
 hr {
-  border-color: rgba(230, 230, 230, 0.2) !important;
+  border-color: var(--sphinx-line) !important;
 }
 
 @media screen and (max-width: 1100px) {
   div.documentwrapper {
-    background-color: var(--tt-bg) !important;
+    background-color: var(--bg) !important;
   }
 
   div.sphinxsidebar {
-    background-color: var(--tt-blue-900) !important;
-    color: var(--tt-text) !important;
+    background-color: var(--blue-900) !important;
+    color: var(--text) !important;
   }
 
   div.sphinxsidebar h3,
   div.sphinxsidebar h4,
   div.sphinxsidebar p,
   div.sphinxsidebar h3 a {
-    color: var(--tt-text) !important;
+    color: var(--text) !important;
   }
 
   div.sphinxsidebar a {
-    color: var(--tt-blue-500) !important;
+    color: var(--blue-500) !important;
   }
 
   div.sphinxsidebar a:hover {
-    color: var(--tt-red-600) !important;
+    color: var(--red-600) !important;
   }
 }

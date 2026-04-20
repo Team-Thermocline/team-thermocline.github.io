@@ -345,33 +345,33 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #888;
+    color: var(--text-dim);
     font-size: 0.9rem;
     cursor: pointer;
     user-select: none;
   }
   .graph-meta-check input {
-    accent-color: #5a9fd4;
+    accent-color: var(--accent-soft-blue);
   }
   .update-speed-label {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #888;
+    color: var(--text-dim);
   }
   .update-speed-input {
     width: 10ch;
     padding: 4px 6px;
-    background: #2a2a2a;
-    color: #aaa;
-    border: 1px solid #3a3a3a;
+    background: var(--surface-control-muted);
+    color: var(--text-soft);
+    border: 1px solid var(--border-default);
     border-radius: 4px;
     font-family: inherit;
     font-size: 0.9rem;
   }
   .update-speed-input:focus {
     outline: none;
-    border-color: #555;
+    border-color: var(--border-focus);
   }
   button.kiosk-ms-btn.update-speed-input {
     cursor: pointer;
@@ -394,13 +394,13 @@
     inset: 0;
     padding: 0;
     border: none;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--scrim);
     cursor: default;
   }
   .debug-modal {
     position: relative;
-    background: #1c1c1c;
-    border: 1px solid #3a3a3a;
+    background: var(--surface-input);
+    border: 1px solid var(--border-default);
     border-radius: 10px;
     padding: 16px;
     max-width: 90vw;
@@ -426,23 +426,23 @@
   .debug-table td {
     text-align: left;
     padding: 6px 12px;
-    border-bottom: 1px solid #2b2b2b;
+    border-bottom: 1px solid var(--border-muted);
   }
   .debug-table th {
-    color: #888;
+    color: var(--text-dim);
     font-weight: 600;
   }
   .debug-table td.debug-value-nominal {
-    color: #6bcf7f;
+    color: var(--ok-muted);
   }
   .debug-table td.debug-value-warn {
-    color: #d9b84d;
+    color: var(--warn-muted);
   }
   .plot-wrap {
     width: 100%;
   }
   .plot :global(.uplot) {
-    background: #000;
+    background: var(--status-off-bg);
   }
   .plot :global(.u-title) {
     color: rgba(255, 255, 255, 0.85);
@@ -456,9 +456,9 @@
     font-size: 12px;
   }
   button {
-    background: #242424;
-    color: #fff;
-    border: 1px solid #3a3a3a;
+    background: var(--surface-control);
+    color: var(--text-on-strong);
+    border: 1px solid var(--border-default);
     border-radius: 8px;
     padding: 8px 10px;
     cursor: pointer;

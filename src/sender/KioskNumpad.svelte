@@ -115,7 +115,7 @@
     margin: 0;
     border: none;
     padding: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--scrim-light);
     cursor: pointer;
   }
 
@@ -123,8 +123,8 @@
     position: relative;
     width: min(420px, 100%);
     max-height: min(78vh, 520px);
-    background: #141418;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--surface-numpad);
+    border: 1px solid var(--border-light-on-dark);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
     padding: 12px 12px 16px;
@@ -143,16 +143,16 @@
   .numpad-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #e8e8ec;
+    color: var(--text);
   }
 
   .numpad-x {
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid var(--border-faint-on-dark);
     background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    color: var(--text-on-strong);
     font-size: 1.4rem;
     line-height: 1;
     cursor: pointer;
@@ -166,7 +166,7 @@
     padding: 12px 14px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.35);
-    color: #7ec8ff;
+    color: var(--numpad-display);
     min-height: 2.5rem;
     font-variant-numeric: tabular-nums;
   }
@@ -180,9 +180,9 @@
   .numpad-key {
     min-height: 52px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--border-faint-on-dark);
     background: rgba(255, 255, 255, 0.07);
-    color: #f2f2f7;
+    color: var(--numpad-key);
     font-size: 1.25rem;
     font-weight: 600;
     cursor: pointer;

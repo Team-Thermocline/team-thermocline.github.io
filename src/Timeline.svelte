@@ -157,7 +157,6 @@
     margin-bottom: 8px;
     padding: 6px 10px;
     background: var(--blue-700);
-    background-color: var(--blue-700);
     color: var(--text);
     font-size: 14px;
     white-space: nowrap;

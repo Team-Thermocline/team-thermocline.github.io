@@ -407,8 +407,8 @@
   .game-box {
     width: 300px;
     height: 800px;
-    background: #000;
-    border: 1px solid #2b2b2b;
+    background: var(--status-off-bg);
+    border: 1px solid var(--border-muted);
     border-radius: 10px;
     overflow: hidden;
     position: relative;
@@ -426,7 +426,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--scrim-heavy);
     display: flex;
     flex-direction: column;
     justify-content: center;

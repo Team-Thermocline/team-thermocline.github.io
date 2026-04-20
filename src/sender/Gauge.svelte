@@ -196,7 +196,7 @@
   }
   .arc {
     fill: none;
-    stroke: #888;
+    stroke: var(--text-dim);
     stroke-width: 32;
     stroke-linecap: butt;
   }
@@ -240,7 +240,7 @@
   }
   .hub {
     fill: #ddd;
-    stroke: #222;
+    stroke: var(--border-subtle);
     stroke-width: 1;
   }
   .numbers {

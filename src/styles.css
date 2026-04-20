@@ -1,14 +1,73 @@
 :root {
+  /* Brand / navigation */
   --blue-900: #0b2747;
   --blue-700: #123a6b;
   --blue-500: #1f5fa8;
   --cyan-500: #00ffff;
   --red-600: #c62828;
   --red-700: #b71c1c;
+
+  /* Page shell */
   --edge: #0e0e10;
   --bg: #0a0a0b;
   --text: #e6e6e6;
   --muted: #b7c0ca;
+
+  /* Surfaces */
+  --surface-card: #0f141a;
+  --surface-card-hover: #121922;
+  --surface-code: #0c0f13;
+  --surface-panel: #111;
+  --surface-input: #1c1c1c;
+  --surface-control: #242424;
+  --surface-control-muted: #2a2a2a;
+  --surface-numpad: #141418;
+  --surface-terminal-input: #0b0b0b;
+
+  /* Borders */
+  --border-default: #3a3a3a;
+  --border-muted: #2b2b2b;
+  --border-subtle: #1f1f1f;
+  --border-focus: #555;
+  --border-highlight: #cfcfcf;
+  --border-light-on-dark: rgba(255, 255, 255, 0.12);
+  --border-faint-on-dark: rgba(255, 255, 255, 0.14);
+  --border-faint-line: rgba(230, 230, 230, 0.2);
+
+  /* Text steps */
+  --text-on-strong: #fff;
+  --text-soft: #aaa;
+  --text-dim: #888;
+
+  /* Accents / feedback */
+  --danger-bright: #ff3b30;
+  --ok-muted: #6bcf7f;
+  --warn-muted: #d9b84d;
+  --accent-soft-blue: #5a9fd4;
+  --numpad-display: #7ec8ff;
+  --numpad-key: #f2f2f7;
+
+  /* Overlays */
+  --scrim: rgba(0, 0, 0, 0.6);
+  --scrim-heavy: rgba(0, 0, 0, 0.9);
+  --scrim-light: rgba(0, 0, 0, 0.55);
+
+  /* Sender status grid (LED-style) */
+  --status-off-bg: #000;
+  --status-off-fg: #666;
+  --status-red-bg: var(--danger-bright);
+  --status-red-fg: #fff;
+  --status-green-bg: #34c759;
+  --status-green-fg: #000;
+  --status-yellow-bg: #ffd60a;
+  --status-yellow-fg: #000;
+
+  /* Kiosk / gauge */
+  --kiosk-temp-bg: #1e1e22;
+  --kiosk-temp-fg: #e0e0e6;
+
+  /* Serial log */
+  --terminal-green: #0f0;
 }
 
 html, body {
@@ -39,14 +98,15 @@ a {
   color: var(--text);
 }
 
-* {
+*,
+main,
+section,
+div,
+article,
+header,
+nav {
   background-color: transparent;
 }
-
-main, section, div, article, header, nav {
-  background-color: transparent;
-}
-
 
 .container {
   max-width: 1120px;
@@ -115,7 +175,6 @@ button {
   display: inline-block;
   padding: 10px 14px;
   background: var(--red-600);
-  background-color: var(--red-600);
   color: var(--text);
   text-decoration: none;
   box-shadow: 0 0 0 4px var(--red-700) inset;
@@ -167,7 +226,7 @@ main {
 }
 
 .content-block {
-  background: #0f141a;
+  background: var(--surface-card);
   box-shadow: 0 0 0 6px var(--blue-500) inset;
   padding: 24px;
 }
@@ -233,7 +292,7 @@ main {
 /* Inset-bordered cards */
 .project-card,
 .update-card {
-  background: #0f141a;
+  background: var(--surface-card);
   box-shadow: 0 0 0 4px var(--blue-500) inset;
   transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background 0.12s ease-out;
 }
@@ -243,7 +302,7 @@ main {
 .update-card:hover,
 .update-card:focus-visible {
   outline: none;
-  background: #121922;
+  background: var(--surface-card-hover);
   box-shadow: 0 0 0 4px var(--red-600) inset;
   transform: translateY(-1px);
 }
@@ -348,7 +407,7 @@ main {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 13px;
   line-height: 1.45;
-  color: #fff;
+  color: var(--text-on-strong);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -419,7 +478,7 @@ main {
   width: 100%;
   height: 160px;
   object-fit: cover;
-  background: #0c0f13;
+  background: var(--surface-code);
 }
 
 .update-title {
@@ -444,7 +503,7 @@ main {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: var(--scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -456,7 +515,7 @@ main {
   width: min(900px, 100%);
   max-height: 90vh;
   overflow: auto;
-  background: #0f141a;
+  background: var(--surface-card);
   box-shadow: 0 0 0 6px var(--blue-500) inset;
   padding: 16px;
 }
@@ -507,7 +566,7 @@ main {
   color: var(--text);
 }
 .markdown pre, .markdown code {
-  background: #0c0f13;
+  background: var(--surface-code);
   padding: 4px 6px;
 }
 
@@ -531,25 +590,14 @@ main {
   gap: 16px;
 }
 
-.footer-links a {
+.footer a {
   color: var(--text);
   text-decoration: none;
   transition: opacity 0.2s;
 }
 
-.footer-links a:hover,
-.footer-links a:focus-visible {
-  opacity: 0.8;
-  outline: none;
-}
-
-.footer-content a {
-  color: var(--text);
-  text-decoration: none;
-}
-
-.footer-content a:hover,
-.footer-content a:focus-visible {
+.footer a:hover,
+.footer a:focus-visible {
   opacity: 0.8;
   outline: none;
 }
