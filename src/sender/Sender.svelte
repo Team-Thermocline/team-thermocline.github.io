@@ -531,7 +531,10 @@
   }
 
   function clearLogs() {
+    // Clear out text logs
     logs = [];
+    // Clear out samples from graph
+    samples = [];
   }
 
   async function sendManual() {
