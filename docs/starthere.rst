@@ -64,7 +64,7 @@ The chamber uses both a raspberry pi pico as the primary controller and a raspbe
 should boot almost imedietly after power is applied, and should turn on the chamber lights.
 **The pi 5 may take one or two minutes to boot.**
 
-.. image:: images/placeholder.png
+.. image:: images/HMI/poweron.png
 
 
 Using the HMI Touch Screen
