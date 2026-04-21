@@ -37,7 +37,7 @@ This manual references things in terms of **Left** and **Right** side of the mac
 Moving the Chamber
 ==================
 
-.. warning:: The Chamber is 22" by 31" and weighs about 90lb. When lifting the chamber, please use at least a *two person lift*.
+.. warning:: The Chamber is 22" by 31" and weighs about 125lb. When lifting the chamber, please use at least a *two person lift*.
 
 The chamber has handles located on either side. With two or four people, lift each handle vertically 
 to move the chamber. Do not rotate the chamber as this may cause fluids to move into unintended parts
