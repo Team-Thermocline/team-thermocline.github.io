@@ -449,7 +449,7 @@ main {
 
 .credits-team-headshot {
   display: block;
-  max-height: min(180px, 20vw);
+  max-height: min(300px, 40vw);
   width: auto;
   height: auto;
 }
