@@ -1,24 +1,26 @@
 <script>
-  import { onMount } from 'svelte';
   import { loadUpdates } from './lib/updates.js';
-  
-  // Timeline configuration
+
+  // Timeline configuration (project span; end = capstone completion)
   const startTimestamp = 1756830600;
-  const endTimestamp = 1777068000;
-  
+  const endTimestamp = 1777068000; // 2026-04-24T22:00:00.000Z — Final Presentation
+
+  /** "Now" marker frozen at project completion. */
+  const FIXED_NOW_SECONDS = endTimestamp;
+
   // Helper function to convert date string to epoch seconds
   function dateToTimestamp(dateString) {
     return Math.floor(new Date(dateString).getTime() / 1000);
   }
-  
+
   // Load updates and convert to timeline events
   const updates = loadUpdates();
   const updateEvents = updates.map(update => ({
     timestamp: Math.floor(update.date.getTime() / 1000),
     label: update.title
   }));
-  
-  // Upcoming milestones
+
+  // Planned milestones (all shown; project is complete)
   const allUpcomingEvents = [
     { timestamp: dateToTimestamp('2025-12-10'), label: 'CDR Presentation' },
     { timestamp: dateToTimestamp('2026-01-20'), label: 'I&T Flows, Verification Matrix' },
@@ -31,42 +33,22 @@
     { timestamp: dateToTimestamp('2026-04-21'), label: 'Final Posters' },
     { timestamp: dateToTimestamp('2026-04-24'), label: 'Final Project Report' },
   ];
-  
-  let currentPosition = 0;
-  let currentTimestamp = Math.floor(Date.now() / 1000);
-  
-  // Filter upcoming events to only show those ahead of current time
-  $: upcomingEvents = allUpcomingEvents.filter(event => event.timestamp > currentTimestamp);
-  
-  // Events array - each event has a timestamp and label
-  $: events = [
+
+  const events = [
     { timestamp: startTimestamp, label: 'Start' },
     ...updateEvents,
-    ...upcomingEvents,
+    ...allUpcomingEvents,
     { timestamp: endTimestamp, label: 'Final Presentation' },
   ];
-  
+
   // Calculate position percentage for an event (0 to 100)
   function getEventPosition(eventTimestamp) {
     const totalDuration = endTimestamp - startTimestamp;
     const eventOffset = eventTimestamp - startTimestamp;
     return (eventOffset / totalDuration) * 100;
   }
-  
-  // Calculate current time position
-  function updateCurrentPosition() {
-    if (typeof window === "undefined") return;
-    const now = Math.floor(Date.now() / 1000); // Current time in seconds
-    currentTimestamp = now;
-    currentPosition = getEventPosition(now);
-  }
-  
-  onMount(() => {
-    updateCurrentPosition();
-    // Update every minute
-    const interval = setInterval(updateCurrentPosition, 60000);
-    return () => clearInterval(interval);
-  });
+
+  const currentPosition = getEventPosition(FIXED_NOW_SECONDS);
 </script>
 
 <div class="timeline-container">
@@ -96,13 +78,13 @@
     height: 4px;
     z-index: 20;
   }
-  
+
   .timeline-bar {
     width: 100%;
     height: 4px;
     background: var(--blue-500);
   }
-  
+
   .current-arrow {
     position: absolute;
     top: 50%;
@@ -115,19 +97,19 @@
     z-index: 15;
     cursor: pointer;
   }
-  
+
   .current-arrow:hover .event-tooltip,
   .current-arrow:focus-visible .event-tooltip {
     opacity: 1;
   }
-  
+
   .current-arrow .event-tooltip {
     bottom: auto;
     top: 100%;
     margin-bottom: 20px;
     margin-top: 30px;
   }
-  
+
   .event-ball {
     position: absolute;
     top: 50%;
@@ -140,14 +122,14 @@
     cursor: pointer;
     transition: all 0.2s;
   }
-  
+
   .event-ball:hover,
   .event-ball:focus-visible {
     width: 16px;
     height: 16px;
     outline: none;
   }
-  
+
   .event-tooltip {
     position: absolute;
     text-align: center;
@@ -168,7 +150,7 @@
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
-  
+
   .event-ball:hover .event-tooltip,
   .event-ball:focus-visible .event-tooltip {
     opacity: 1;

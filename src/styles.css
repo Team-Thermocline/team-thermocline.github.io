@@ -114,9 +114,8 @@ nav {
   padding: 0 24px;
 }
 
-/* Home page: center content with wider max-width (fits three update columns) */
 .main-home.container {
-  max-width: 1880px;
+  max-width: 1520px;
   padding: 0 32px;
 }
 
@@ -211,9 +210,7 @@ main {
   flex-wrap: nowrap;
   gap: 14px;
   align-items: flex-start;
-  max-width: 1840px;
   margin: 0 auto;
-  padding-left: 300px;
 }
 
 .home-content {
@@ -229,22 +226,6 @@ main {
   background: var(--surface-card);
   box-shadow: 0 0 0 6px var(--blue-500) inset;
   padding: 24px;
-}
-
-.game-box {
-  flex: 0 0 300px;
-  align-self: flex-start;
-  min-height: 800px;
-}
-
-@media (max-width: 768px) {
-  .game-box {
-    display: none;
-  }
-
-  .home-wrapper {
-    padding-left: 0;
-  }
 }
 
 .content-block h2 {
@@ -345,6 +326,140 @@ main {
 @media (max-width: 1024px) {
   .project-resources-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+/* Credits page */
+.credits-page {
+  margin-top: 24px;
+  text-align: center;
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.credits-intro {
+  margin-bottom: 2.5rem;
+}
+
+.credits-intro h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.credits-intro p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.credits-section {
+  margin-bottom: 2.5rem;
+}
+
+.credits-section-title {
+  margin: 0 0 1rem 0;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--blue-500);
+  font-weight: 600;
+}
+
+.credits-section-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.credits-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.credits-name {
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  letter-spacing: 0.04em;
+}
+
+.credits-role {
+  font-size: 0.9rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.credits-section--team {
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.credits-team {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.credits-team-member {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.credits-team-member--flip {
+  flex-direction: row-reverse;
+}
+
+.credits-team-thumb-frame {
+  flex-shrink: 0;
+  display: inline-block;
+  line-height: 0;
+  padding: 10px;
+  background: var(--surface-card);
+  box-shadow: 0 0 0 4px var(--blue-500) inset;
+  border-radius: 0;
+}
+
+.credits-team-headshot {
+  display: block;
+  max-height: min(300px, 40vw);
+  width: auto;
+  height: auto;
+}
+
+.credits-team-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: left;
+}
+
+.credits-team-member--flip .credits-team-text {
+  align-items: flex-end;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .credits-team-member,
+  .credits-team-member--flip {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .credits-team-text,
+  .credits-team-member--flip .credits-team-text {
+    align-items: center;
+    text-align: center;
   }
 }
 
