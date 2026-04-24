@@ -114,9 +114,8 @@ nav {
   padding: 0 24px;
 }
 
-/* Home page: center content with wider max-width (fits three update columns) */
 .main-home.container {
-  max-width: 1880px;
+  max-width: 1520px;
   padding: 0 32px;
 }
 
@@ -211,9 +210,7 @@ main {
   flex-wrap: nowrap;
   gap: 14px;
   align-items: flex-start;
-  max-width: 1840px;
   margin: 0 auto;
-  padding-left: 300px;
 }
 
 .home-content {
@@ -229,22 +226,6 @@ main {
   background: var(--surface-card);
   box-shadow: 0 0 0 6px var(--blue-500) inset;
   padding: 24px;
-}
-
-.game-box {
-  flex: 0 0 300px;
-  align-self: flex-start;
-  min-height: 800px;
-}
-
-@media (max-width: 768px) {
-  .game-box {
-    display: none;
-  }
-
-  .home-wrapper {
-    padding-left: 0;
-  }
 }
 
 .content-block h2 {

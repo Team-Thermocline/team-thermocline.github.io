@@ -1,11 +1,10 @@
 <script>
-  /** Headshots live in `static/headshots/` (served as `/headshots/…`). */
   const teamMembers = [
-    { name: "Alexandra Friebolin", role: "Chief Test Engineer", headshot: "/headshots/alex.jpg" },
-    { name: "Jacob Morrissette", role: "Chief Analyst", headshot: "/headshots/jacob.jpg" },
-    { name: "Nik DiLullo", role: "Project Engineer", headshot: "/headshots/nik.jpg" },
-    { name: "Joe Sedutto", role: "Program Lead", headshot: "/headshots/joe.jpg" },
-    { name: "Alexia Hnatowicz", role: "System Engineer", headshot: "/headshots/lexi.jpg" },
+    { name: "Alexandra Friebolin", role: "Mechanical Engineer", headshot: "/headshots/alex.jpg" },
+    { name: "Jacob Morrissette", role: "Mechanical Engineer", headshot: "/headshots/jacob.jpg" },
+    { name: "Nik DiLullo", role: "Electrical Engineer", headshot: "/headshots/nik.jpg" },
+    { name: "Joe Sedutto", role: "Electrical Engineer", headshot: "/headshots/joe.jpg" },
+    { name: "Alexia Hnatowicz", role: "Mechanical Engineer", headshot: "/headshots/lexi.jpg" },
   ];
 
   const creditsSections = [
@@ -35,9 +34,10 @@
     ]},
     { title: "Classmates", 
     entries: [
-      { name: "Matthew MacDonald", role: "Software Collaborator" },
+      { name: "Anuj Khadka", role: "OpenFOAM expert" },
       { name: "Jimmy Small", role: "EPA Certified" },
       { name: "Sam Norton", role: "Electrical Engineer" },
+      { name: "Matthew MacDonald", role: "Software Collaborator" },
     ]},
     { title: "Others", 
     entries: [

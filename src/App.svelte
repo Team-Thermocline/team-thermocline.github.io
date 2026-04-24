@@ -6,7 +6,6 @@
   import Credits from "./Credits.svelte";
   import Countdown from "./Countdown.svelte";
   import Timeline from "./Timeline.svelte";
-  import Game from "./game/Game.svelte";
   import { isKioskUrl } from "./lib/kiosk.js";
   import { docsPathnameToSphinxRel } from "./lib/docsUrl.js";
 
@@ -289,10 +288,6 @@
         </div>
       {/if}
         </section>
-      </div>
-
-      <div class="game-box">
-        <Game />
       </div>
     </div>
   {:else if effectivePage === "sender"}
