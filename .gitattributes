@@ -1,0 +1,9 @@
+src/updates/acceptance-data-package/bundle/bundle-scs-order-3.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/Controller[[:space:]]Board[[:space:]]Gerbers.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/Developmental[[:space:]]Steps.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/Thermocline[[:space:]]Logos.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/bundle-scs-order-1.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/bundle-scs-order-4.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/bundle-3d-printing-kit.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/bundle-gasket-kit.zip filter=lfs diff=lfs merge=lfs -text
+src/updates/acceptance-data-package/bundle/bundle-scs-order-2.zip filter=lfs diff=lfs merge=lfs -text
